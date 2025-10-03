@@ -1,0 +1,79 @@
+import os
+from aws_cdk import (
+    Stack,
+    Duration,
+    aws_lambda as _lambda,
+    aws_sqs as _sqs,
+    aws_lambda_event_sources as _event_sources,
+    aws_iam as _iam,
+    CfnOutput,
+)
+from constructs import Construct
+from aws_cdk.aws_ecr_assets import DockerImageAsset
+
+class NemoAgenticAILambdaStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+
+        aws_account = Stack.of(self).account
+
+        docker_asset = DockerImageAsset(self, 
+            "NemoAILambdaDockerImage",
+            directory=os.getcwd(),
+            display_name='nemo-ai-agentic-lambda-container'
+        )
+        
+        ecs_docker_asset = DockerImageAsset(self, 
+            "NemoAIECSDockerImage",
+            directory=os.getcwd(),
+            display_name='nemo-ai-agentic-ecs-container',
+            file='Dockerfile_ecs',
+            asset_name='nemo-ai-agentic-ecs-container'
+        )
+
+        docker_lambda = _lambda.DockerImageFunction(
+            self, "NemoAgentDockerLambda",
+            code=_lambda.DockerImageCode.from_ecr(
+                repository=docker_asset.repository,
+                tag_or_digest=docker_asset.image_tag
+            ),
+            memory_size=1024,
+            timeout=Duration.seconds(900),
+        )
+
+        queue = _sqs.Queue.from_queue_arn(
+            self,
+            "ImportedQueue",
+            f"arn:aws:sqs:us-east-1:{aws_account}:nemo-ai-tasks.fifo"
+        )
+
+        docker_lambda.add_event_source(
+            _event_sources.SqsEventSource(
+                queue,
+                batch_size=1,
+                enabled=True
+            )
+        )
+
+        queue.grant_consume_messages(docker_lambda)
+
+        docker_lambda.add_to_role_policy(
+            _iam.PolicyStatement(
+                actions=[
+                    "bedrock:InvokeModel",
+                    "bedrock:InvokeModelWithResponseStream"
+                ],
+                resources=["*"],
+            )
+        )
+
+        CfnOutput(
+            self, "LambdaFunctionName",
+            value=docker_lambda.function_name,
+            description="Docker-based Lambda deployed via CDK"
+        )
+
+        CfnOutput(self, "ECSImageURI",
+            value=f"{ecs_docker_asset.repository.repository_uri}:{ecs_docker_asset.image_tag}",
+            description="ECS-compatible Docker image URI (by digest)"
+        )

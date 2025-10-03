@@ -1,0 +1,3 @@
+import os
+
+GITHUB_PERSONAL_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
