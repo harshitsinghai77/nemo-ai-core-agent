@@ -291,17 +291,13 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
             
             logging.info("✅ Context7 client connected successfully")
 
-            # Get Context7 tools immediately after connection
             try:
-                context7_tools = await context7_client.list_tools()  # Use async version
+                context7_tools = await context7_client.list_tools() 
                 logging.info(f"✅ Context7 tools loaded: {len(context7_tools)} tools available")
             except Exception as e:
                 logging.error(f"❌ Failed to load Context7 tools: {e}")
-                raise  # Re-raise to stop workflow since Context7 is required
+                raise  
             
-            # ====================
-            # STEP 1: PLANNING
-            # ====================
             logging.info("Step 1: Planning phase")
             repo_path = f'/tmp/{project_name}'
             file_context = filter_files(repo_path)
@@ -323,10 +319,8 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
             
             logging.info(f"Plan created:\\n{plan}")
 
-            # ====================
-            # STEP 2: IMPLEMENTATION
-            # ====================
             logging.info("Step 2: Implementation phase")
+            
             # context7_tools = context7_client.list_tools_sync()
             senior_agent = Agent(
                 name='senior_software_engineer',
@@ -354,9 +348,6 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
             change_summary = str(senior_agent(impl_task))
             logging.info(f"Implementation completed:\\n{change_summary}")
 
-            # ====================
-            # STEP 3: CAPTURE CHANGES VIA GIT
-            # ====================
             logging.info("Step 3: Capturing changes via git manifest")
             change_manifest = get_manifest(project_name=project_name, py_only=True)
             
@@ -366,9 +357,6 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
             
             logging.info(f"Manifest captured {len(change_manifest.get('changes', []))} file changes")
 
-            # ====================
-            # STEP 4: CODE REVIEW (Single Comprehensive Review)
-            # ====================
             logging.info("Step 4: Code review phase")
             
             review_task = f"""
@@ -391,9 +379,6 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
             combined_feedback = '\n'.join([f"{role.upper()}: {fb}" for role, fb in feedback.items() if fb])
             logging.info(f"Code review completed:\\n{combined_feedback}")
 
-            # ====================
-            # STEP 5: INCORPORATE FEEDBACK (One Iteration Only)
-            # ====================
             logging.info("Step 5: Incorporating review feedback")
             
             revise_task = f"""
@@ -422,9 +407,6 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
             # Update manifest after revisions
             change_manifest = get_manifest(project_name=project_name, py_only=True)
         
-            # ====================
-            # STEP 6: STORY SCORING
-            # ====================
             logging.info("Step 6: Story scoring phase")
             
             score_task = f"""
@@ -443,9 +425,6 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
             score = str(story_scoring_agent(score_task))
             logging.info(f"Story score: {score}")
 
-            # ====================
-            # STEP 7: DOCUMENTATION
-            # ====================
             logging.info("Step 7: Generating PR documentation")
             
             doc_agent = Agent(
@@ -481,9 +460,7 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
             logging.info(f"doc_result", doc_result)
             logging.info("PR documentation generated successfully")
 
-            # ====================
-            # WORKFLOW COMPLETE
-            # ====================
+            
             return json.dumps({
                 "status": "success",
                 "jira_story_id": jira_story_id,
