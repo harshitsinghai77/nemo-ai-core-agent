@@ -1,14 +1,14 @@
 import os
 
 import aws_cdk as cdk
-from infrastructure.nemo_ai_lambda_stack import NemoAgenticAILambdaStack
+from infrastructure.nemo_ai_core_agent_stack import NemoCoreAgentStack
 
 app = cdk.App()
 
-NemoAgenticAILambdaStack(app, "NemoAgenticAILambdaStack", 
+NemoCoreAgentStack(app, "NemoCoreAgentStack", 
                 
     # If you don't specify 'env', this stack will be environment-agnostic.
-    # Account/Region-dependent features and context lookups will not work,
+    # Account/Region-dependent features and context lookups will not work,  
     # but a single synthesized template can be deployed anywhere.
 
     # Uncomment the next line to specialize this stack for the AWS Account

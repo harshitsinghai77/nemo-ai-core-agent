@@ -21,7 +21,6 @@ def start_ecs_task():
         exit(1)
     
     try:
-        
         clone_url, project_name = parse_github_url(github_link)
 
         # Clone and validate repo

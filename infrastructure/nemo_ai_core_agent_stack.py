@@ -11,7 +11,7 @@ from aws_cdk import (
 from constructs import Construct
 from aws_cdk.aws_ecr_assets import DockerImageAsset
 
-class NemoAgenticAILambdaStack(Stack):
+class NemoCoreAgentStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
@@ -61,9 +61,30 @@ class NemoAgenticAILambdaStack(Stack):
             _iam.PolicyStatement(
                 actions=[
                     "bedrock:InvokeModel",
-                    "bedrock:InvokeModelWithResponseStream"
+                    "bedrock:InvokeModelWithResponseStream",
+       
+                    "bedrock-agentcore:CreateCodeInterpreter",
+                    "bedrock-agentcore:StartCodeInterpreterSession",
+                    "bedrock-agentcore:InvokeCodeInterpreter",
+                    "bedrock-agentcore:StopCodeInterpreterSession",
+                    "bedrock-agentcore:DeleteCodeInterpreter",
+                    "bedrock-agentcore:ListCodeInterpreters",
+                    "bedrock-agentcore:GetCodeInterpreter"
                 ],
                 resources=["*"],
+            )
+        )
+
+        docker_lambda.add_to_role_policy(
+            _iam.PolicyStatement(
+                actions=[
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                ],
+                resources=[
+                    f"arn:aws:logs:*:{aws_account}:log-group:/aws/bedrock-agentcore/code-interpreter*"
+                ],
             )
         )
 

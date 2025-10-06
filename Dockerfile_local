@@ -10,7 +10,7 @@ WORKDIR /app
 COPY . .
 
 # Install dependencies (update this if you use requirements.txt or pyproject.toml)
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Default command to keep container running
 CMD ["tail", "-f", "/dev/null"]
