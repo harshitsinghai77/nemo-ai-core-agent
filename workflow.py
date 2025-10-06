@@ -285,19 +285,23 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
     """
 
     logging.info("Initializing Context7 MCP client...")
-    context7_client = MCPClient(lambda: streamablehttp_client("https://mcp.context7.com/mcp"))
+    context7_mcp = MCPClient(lambda: streamablehttp_client("https://mcp.context7.com/mcp"))
+    aws_documentation_mcp = MCPClient(lambda: streamablehttp_client("https://knowledge-mcp.global.api.aws"))
+
     try:
-        async with context7_client:
-            
+        async with context7_mcp, aws_documentation_mcp:
             logging.info("✅ Context7 client connected successfully")
+            logging.info("✅ AWS Documentation MCP client connected successfully")
 
             try:
-                context7_tools = await context7_client.list_tools() 
-                logging.info(f"✅ Context7 tools loaded: {len(context7_tools)} tools available")
+                context7_tools = await context7_mcp.list_tools()
+                aws_documentation_tools = await aws_documentation_mcp.list_tools()
+                logging.info(f"✅ AWS Documentation MCP {len(aws_documentation_tools)} tools available")
+                logging.info(f"✅ Context7 MCP {len(context7_tools)} tools available")
             except Exception as e:
-                logging.error(f"❌ Failed to load Context7 tools: {e}")
+                logging.error(f"❌ Failed to load AWS Documentation MCP or Context7 MCP tools: {e}")
                 raise  
-            
+
             logging.info("Step 1: Planning phase")
             repo_path = f'/tmp/{project_name}'
             file_context = filter_files(repo_path)
@@ -326,7 +330,7 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
                 name='senior_software_engineer',
                 model=claude_sonnet_4,
                 system_prompt=senior_engineer_prompt.format(project_name=project_name),
-                tools=[editor, file_read, file_write, shell, *context7_tools],
+                tools=[editor, file_read, file_write, shell, *context7_tools, *aws_documentation_tools],
                 callback_handler=None
             )
             
@@ -340,9 +344,6 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
             1. Implement ONLY what is specified in the Jira story
             2. Do NOT modify unrelated code
             3. Do NOT add extra features or improvements
-            4. Focus on the acceptance criteria
-            
-            Use file_read to understand existing code before making changes.
             """
             
             change_summary = str(senior_agent(impl_task))
@@ -439,15 +440,13 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
             )
             
             doc_task = f"""
-            Generate PR documentation for Jira Story: {jira_story_id}
+            Generate PR body for Jira Story: {jira_story_id}
             
             Story Details: {jira_story}
             
             Implementation Plan: {plan}
             
             Changes Summary: {change_summary}
-            
-            Code Review Feedback: {feedback}
             
             Changes Manifest: {json.dumps(change_manifest, indent=2)}
             
