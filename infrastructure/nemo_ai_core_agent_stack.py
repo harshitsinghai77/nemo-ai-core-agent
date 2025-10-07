@@ -30,10 +30,6 @@ class NemoCoreAgentStack(Stack):
         )
         
         ecs_docker_image = _ecs.ContainerImage.from_ecr_repository(self, 
-            "NemoAIECSDockerImage",
-            directory=os.getcwd(),
-            display_name='nemo-ai-agentic-ecs-container',
-            file='Dockerfile_ecs',
             repository=ecr_image_repo,
             tag='latest'
         )
