@@ -56,9 +56,6 @@ os.environ['BYPASS_TOOL_CONSENT'] = 'True'
 # strands_telemetry = StrandsTelemetry()
 # strands_telemetry.setup_otlp_exporter()     # Send traces to OTLP endpoint
 
-# project_name = 'finance_service_agent'
-# jira_story_id = 'my_jira_story_123'
-
 retry_config = Config(
     retries={
         'max_attempts': 5,
