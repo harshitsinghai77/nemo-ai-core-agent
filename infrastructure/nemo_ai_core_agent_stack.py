@@ -4,6 +4,8 @@ from aws_cdk import (
     Duration,
     aws_lambda as _lambda,
     aws_sqs as _sqs,
+    aws_ecr as _ecr,
+    aws_ecs as _ecs,
     aws_lambda_event_sources as _event_sources,
     aws_iam as _iam,
     CfnOutput,
@@ -22,13 +24,18 @@ class NemoCoreAgentStack(Stack):
             directory=os.getcwd(),
             display_name='nemo-ai-agentic-lambda-container'
         )
+
+        ecr_image_repo = _ecr.Repository.from_repository_name(
+            self, "NemoAIEcrRepo", repository_name="nemo-ai-agent"
+        )
         
-        ecs_docker_asset = DockerImageAsset(self, 
+        ecs_docker_image = _ecs.ContainerImage.from_ecr_repository(self, 
             "NemoAIECSDockerImage",
             directory=os.getcwd(),
             display_name='nemo-ai-agentic-ecs-container',
             file='Dockerfile_ecs',
-            asset_name='nemo-ai-agentic-ecs-container'
+            repository=ecr_image_repo,
+            tag='latest'
         )
 
         docker_lambda = _lambda.DockerImageFunction(
@@ -95,6 +102,6 @@ class NemoCoreAgentStack(Stack):
         )
 
         CfnOutput(self, "ECSImageURI",
-            value=f"{ecs_docker_asset.repository.repository_uri}:{ecs_docker_asset.image_tag}",
+            value=f"{ecs_docker_image.repository.repository_uri}:{ecs_docker_image.tag}",
             description="ECS-compatible Docker image URI (by digest)"
         )
