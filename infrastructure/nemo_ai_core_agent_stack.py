@@ -98,6 +98,6 @@ class NemoCoreAgentStack(Stack):
         )
 
         CfnOutput(self, "ECSImageURI",
-            value=f"{ecs_docker_image.repository.repository_uri}:{ecs_docker_image.tag}",
+            value=f"{ecs_docker_image.image_uri}",
             description="ECS-compatible Docker image URI (by digest)"
         )
