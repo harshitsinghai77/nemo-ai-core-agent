@@ -25,12 +25,13 @@ class NemoCoreAgentStack(Stack):
             display_name='nemo-ai-agentic-lambda-container'
         )
 
-        ecr_image_repo = _ecr.Repository.from_repository_name(
+        # Create ECR repository for ECS image
+        ecr_repo = _ecr.Repository(
             self, "NemoAIEcrRepo", repository_name="nemo-ai-agent"
         )
         
         ecs_docker_image = _ecs.ContainerImage.from_ecr_repository(self, 
-            repository=ecr_image_repo,
+            repository=ecr_repo,
             tag='latest'
         )
 
