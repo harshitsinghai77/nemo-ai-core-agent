@@ -1,4 +1,5 @@
 import json
+import asyncio
 from dotenv import load_dotenv
 
 from run_workflow import run_nemo_agent_workflow
@@ -25,12 +26,12 @@ def lambda_handler(event, context):
                 print(f"⚠️ Skipping message: missing fields: {missing} {str(record)}")
                 continue  # Skip this message but continue processing others
             
-            output = run_nemo_agent_workflow(
+            output = asyncio.run(run_nemo_agent_workflow(
                 github_link=payload["github_link"],
                 jira_story=payload["jira_story"],
                 jira_story_id=payload["jira_story_id"],
                 is_data_analysis_task=payload['is_data_analysis_task']
-            )
+            ))
 
             print(f"✅ Lambda workflow complete: {output}")
             return {"statusCode": 200, "body": "Workflow complete."}
