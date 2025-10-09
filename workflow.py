@@ -1,6 +1,7 @@
 import os
 import re
 import json
+import time
 import asyncio
 import traceback
 import subprocess
@@ -350,11 +351,14 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
             Changes to review: {''.join(combined_changes)}
             """
             print(f"Code review task:\\n{review_task}")
-
+            
+            start_time = time.perf_counter()
             feedback_results = await asyncio.gather(*[
                 agent.invoke_async(review_task) for agent in review_agents.values()
             ])
             feedback = dict(zip(review_agents.keys(), map(str, feedback_results)))
+            end_time = time.perf_counter()
+            print(f"Review agents feedback completed in {end_time - start_time:.2f} seconds")
 
             for role, fb in feedback.items():
                 print("role", role)
