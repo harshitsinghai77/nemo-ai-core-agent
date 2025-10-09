@@ -16,6 +16,7 @@ from strands import Agent, tool
 from strands.models import BedrockModel
 from strands.tools.mcp import MCPClient
 from mcp.client.streamable_http import streamablehttp_client
+from custom_tools.utils import console_util
 
 # from ast_reader import MemoryCodeIndex
 from change_manifest import get_manifest
@@ -332,12 +333,13 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
             print("Step 4: Code review phase")
 
             combined_changes = []
+            console = console_util.create()
             for change in change_manifest.get("changes", []):
                 file_path = change.get("file_path")
                 change_type = change.get("change_type")
                 start_line = change.get("start_line")
                 end_line = change.get("end_line")
-                file_content = file_read.file_read(path=file_path, mode="lines", start_line=start_line, end_line=end_line)
+                file_content = file_read.read_file_lines(console=console, path=file_path, start_line=int(start_line), end_line=int(end_line))
                 combined_changes.append(f"File: {file_path}\nChange Type: {change_type}\nLines: {start_line}-{end_line}\nContent:\n{file_content}\n\n")
             
             for change in combined_changes:
