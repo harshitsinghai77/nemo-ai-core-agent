@@ -336,7 +336,7 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
                 change_type = change.get("change_type")
                 start_line = change.get("start_line")
                 end_line = change.get("end_line")
-                file_content = file_read(path=file_path, mode="lines", start_line=start_line, end_line=end_line)
+                file_content = file_read.file_read(path=file_path, mode="lines", start_line=start_line, end_line=end_line)
                 combined_changes.append(f"File: {file_path}\nChange Type: {change_type}\nLines: {start_line}-{end_line}\nContent:\n{file_content}\n\n")
             
             for change in combined_changes:
