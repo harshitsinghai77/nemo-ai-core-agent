@@ -2,7 +2,6 @@ import os
 import re
 import json
 import asyncio
-import logging
 import traceback
 import subprocess
 from typing import Any, Dict, List
@@ -94,7 +93,7 @@ def filter_files(directory: str, allowed_extensions: List[str] = ['.py', '.md', 
                 files.append(os.path.join(root, filename))
     
     file_context = {"files": files, "total_files": len(files)}
-    logging.info(f"Filtered {len(files)} files from {directory}")
+    print(f"Filtered {len(files)} files from {directory}")
     return json.dumps(file_context, indent=2)
 
 def extract_manifest_from_output(output: str) -> Dict:
@@ -231,14 +230,6 @@ low_system_design_agent = Agent(
     callback_handler=None
 )
 
-# library_compatibility_agent = Agent(
-#     name='library_compatibility_engineer',
-#     model=bedrock_nova_pro_model,
-#     system_prompt=library_compatibility_prompt,
-#     tools=[file_read, shell_agent],
-#     callback_handler=None
-# )
-
 data_structure_algorithms_agent = Agent(
     name='data_structure_algorithms_agent',
     model=bedrock_nova_pro_model,
@@ -267,30 +258,30 @@ review_agents = {
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=1, max=10),
     retry=retry_if_exception_type((httpx.ReadTimeout, httpcore.ReadTimeout, Exception)),
-    before_sleep=lambda retry_state: logging.warning(f"Retrying workflow, attempt {retry_state.attempt_number}...")
+    before_sleep=lambda retry_state: print(f"Retrying workflow, attempt {retry_state.attempt_number}...")
 )
 async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) -> str:
     """Entry point for the Nemo AI workflow."""
 
-    logging.info("Initializing Context7 MCP client...")
+    print("Initializing Context7 MCP client...")
     context7_mcp = MCPClient(lambda: streamablehttp_client("https://mcp.context7.com/mcp"))
     aws_documentation_mcp = MCPClient(lambda: streamablehttp_client("https://knowledge-mcp.global.api.aws"))
 
     try:
         with context7_mcp, aws_documentation_mcp:
-            logging.info("✅ Context7 client connected successfully")
-            logging.info("✅ AWS Documentation MCP client connected successfully")
+            print("✅ Context7 client connected successfully")
+            print("✅ AWS Documentation MCP client connected successfully")
 
             try:
                 context7_tools = context7_mcp.list_tools_sync()
                 aws_documentation_tools = aws_documentation_mcp.list_tools_sync()
-                logging.info(f"✅ AWS Documentation MCP {len(aws_documentation_tools)} tools available")
-                logging.info(f"✅ Context7 MCP {len(context7_tools)} tools available")
+                print(f"✅ AWS Documentation MCP {len(aws_documentation_tools)} tools available")
+                print(f"✅ Context7 MCP {len(context7_tools)} tools available")
             except Exception as e:
-                logging.error(f"❌ Failed to load AWS Documentation MCP or Context7 MCP tools: {e}")
+                print(f"❌ Failed to load AWS Documentation MCP or Context7 MCP tools: {e}")
                 raise  
 
-            logging.info("Step 1: Planning phase")
+            print("Step 1: Planning phase")
             repo_path = f'/tmp/{project_name}'
             file_context = filter_files(repo_path)
             
@@ -301,19 +292,10 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
                 tools=[file_read, shell],
                 callback_handler=None
             )
-            planning_task = f"""
-                Jira Story ID: {jira_story}
-                
-                Create a focused implementation plan that addresses ONLY the requirements in this story.
-            """
-            
-            plan = str(planner_agent(planning_task))
-            
-            logging.info(f"Plan created:\\n{plan}")
+            plan = str(planner_agent(jira_story))
+            print(f"Plan created:\\n{plan}")
 
-            logging.info("Step 2: Implementation phase")
-            
-            # context7_tools = context7_client.list_tools_sync()
+            print("Step 2: Implementation phase")
             senior_agent = Agent(
                 name='senior_software_engineer',
                 model=claude_sonnet_4,
@@ -335,26 +317,39 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
             """
             
             change_summary = str(senior_agent(impl_task))
-            logging.info(f"Implementation completed:\\n{change_summary}")
+            print(f"Implementation completed:\\n{change_summary}")
 
-            logging.info("Step 3: Capturing changes via git manifest")
+            print("Step 3: Capturing changes via git manifest")
             change_manifest = get_manifest(project_name=project_name, py_only=True)
             
             if not change_manifest.get("changes"):
-                logging.warning("No changes detected in manifest!")
+                print("No changes detected in manifest!")
                 return "Workflow complete but no changes were made."
             
-            logging.info(f"Manifest captured {len(change_manifest.get('changes', []))} file changes")
+            print(f"Manifest captured {len(change_manifest.get('changes', []))} file changes")
 
-            logging.info("Step 4: Code review phase")
+            print("Step 4: Code review phase")
+
+            combined_changes = []
+            for change in change_manifest.get("changes", []):
+                file_path = change.get("file_path")
+                change_type = change.get("change_type")
+                start_line = change.get("start_line")
+                end_line = change.get("end_line")
+                file_content = file_read(path=file_path, mode="lines", start_line=start_line, end_line=end_line)
+                combined_changes.append(f"File: {file_path}\nChange Type: {change_type}\nLines: {start_line}-{end_line}\nContent:\n{file_content}\n\n")
             
+            for change in combined_changes:
+                print(f"Change:\\n{change}")
+
             review_task = f"""
             Jira Story: {jira_story}
             
             Implementation Plan: {plan}
             
-            Changes Manifest: {json.dumps(change_manifest, indent=2)}
+            Changes to review: {''.join(combined_changes)}
             """
+            print(f"Code review task:\\n{review_task}")
 
             feedback_results = await asyncio.gather(*[
                 agent.invoke_async(review_task) for agent in review_agents.values()
@@ -366,9 +361,9 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
                 print("feedback", fb)
 
             combined_feedback = '\n'.join([f"{role.upper()}: {fb}" for role, fb in feedback.items() if fb])
-            logging.info(f"Code review completed:\\n{combined_feedback}")
+            print(f"Code review completed:\\n{combined_feedback}")
 
-            logging.info("Step 5: Incorporating review feedback")
+            print("Step 5: Incorporating review feedback")
             
             revise_task = f"""
             Jira Story: {jira_story}
@@ -377,27 +372,24 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
             
             Your Implementation Summary: {change_summary}
             
-            Code Review Feedback:
-            {combined_feedback}
+            Code Review Feedback: {combined_feedback}
             
             TASK: Address the review feedback by making necessary changes.
             
             RULES:
             1. Fix only the issues mentioned in the feedback
             2. Stay within the scope of the Jira story
-            3. Do NOT add new features or make unrelated changes
-            4. If feedback suggests something outside the story scope, ignore it
             """
             
             revised_summary = str(senior_agent(revise_task))
-            logging.info(f"Revisions completed:\\n{revised_summary}")
+            print(f"Revisions completed:\\n{revised_summary}")
             change_summary += f"\\n\\nRevisions based on feedback:\\n{revised_summary}"
             
             # Update manifest after revisions
             change_manifest = get_manifest(project_name=project_name, py_only=True)
         
-            logging.info("Step 6: Story scoring phase")
-            
+            print("Step 6: Story scoring phase")
+               
             score_task = f"""
             Jira Story: {jira_story}
             
@@ -412,9 +404,9 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
             """
             
             score = str(story_scoring_agent(score_task))
-            logging.info(f"Story score: {score}")
+            print(f"Story score: {score}")
 
-            logging.info("Step 7: Generating PR documentation")
+            print("Step 7: Generating PR documentation")
             
             doc_agent = Agent(
                 name='doc_agent',
@@ -444,8 +436,8 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
             """
             
             doc_result = str(doc_agent(doc_task))
-            logging.info(f"doc_result", doc_result)
-            logging.info("PR documentation generated successfully")
+            print(f"doc_result", doc_result)
+            print("PR documentation generated successfully")
 
             
             return json.dumps({
@@ -457,6 +449,6 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
             }, indent=2)
 
     except Exception as e:
-        logging.error(f"Workflow failed: {str(e)}")
-        logging.error(traceback.format_exc())
+        print(f"Workflow failed: {str(e)}")
+        print(traceback.format_exc())
         raise
