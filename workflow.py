@@ -291,7 +291,7 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
                 name='planner_engineer',
                 model=claude_sonnet_4,
                 system_prompt=planner_prompt.format(project_name=project_name, file_context=file_context),
-                tools=[file_read, shell],
+                tools=[file_read, shell, *aws_documentation_tools],
                 callback_handler=None
             )
             plan = str(planner_agent(jira_story))
