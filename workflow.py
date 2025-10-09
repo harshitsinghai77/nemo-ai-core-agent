@@ -1,22 +1,22 @@
-import asyncio
-import json
-import logging
 import os
 import re
+import json
+import asyncio
+import logging
+import traceback
 import subprocess
 from typing import Any, Dict, List
 
-import boto3
 import httpcore
 import httpx
-import traceback
+import boto3
 from botocore.config import Config
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
-
 from strands import Agent, tool
 from strands.models import BedrockModel
 from strands.tools.mcp import MCPClient
 from mcp.client.streamable_http import streamablehttp_client
+
 # from ast_reader import MemoryCodeIndex
 from change_manifest import get_manifest
 from custom_tools import editor, file_read, file_write, shell
@@ -35,7 +35,7 @@ from prompt.agent_prompt import (
 os.environ["LOG_LEVEL"] = "INFO"  # or "INFO", "WARNING", "ERROR"
 
 # Configure Python logging
-logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
+# logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 
 # os.environ["STRANDS_TOOL_CONSOLE_MODE"] = "enabled"
 # os.environ["LANGFUSE_PUBLIC_KEY"] = "pk-lf-e0ca3f41-8e1d-4b3d-846b-719acbb9d9a1"
@@ -270,16 +270,7 @@ review_agents = {
     before_sleep=lambda retry_state: logging.warning(f"Retrying workflow, attempt {retry_state.attempt_number}...")
 )
 async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) -> str:
-    """
-    Streamlined workflow:
-    1. Planner creates implementation plan
-    2. Senior Engineer implements changes
-    3. Git manifest captures actual changes
-    4. Code Reviewer reviews only changed code
-    5. Senior Engineer incorporates feedback (1 iteration only)
-    6. Story Scorer evaluates completeness
-    7. Doc Agent generates PR description
-    """
+    """Entry point for the Nemo AI workflow."""
 
     logging.info("Initializing Context7 MCP client...")
     context7_mcp = MCPClient(lambda: streamablehttp_client("https://mcp.context7.com/mcp"))

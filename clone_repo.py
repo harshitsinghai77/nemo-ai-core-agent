@@ -1,7 +1,9 @@
 import os
 import shutil
 import subprocess
-from constants import GITHUB_PERSONAL_ACCESS_TOKEN
+
+from constants import GIHUB_SECRET_ARN
+from utils import get_github_personal_access_token
 
 def run_cmd(cmd, cwd=None):
     print(f"$ {' '.join(cmd)}")
@@ -24,8 +26,13 @@ def clone_github_repo(repo_url: str, project_name: str, base_branch: str = "main
         print(f"Cleaning old repo at {local_path}...")
         shutil.rmtree(local_path)
 
+    # Get personal access token
+    aws_account_id = os.getenv("AWS_ACCOUNT_ID")
+    secret_arn = GIHUB_SECRET_ARN.format(aws_account_id=aws_account_id)
+    personal_access_token = get_github_personal_access_token(secret_arn=secret_arn)
+
     # Clone fresh
-    remote_url_with_token = f"https://{GITHUB_PERSONAL_ACCESS_TOKEN}@{repo_url.split('https://')[1]}"
+    remote_url_with_token = f"https://{personal_access_token}@{repo_url.split('https://')[1]}"
     run_cmd(["git", "clone", remote_url_with_token, local_path])
     run_cmd(["git", "checkout", base_branch], cwd=local_path)
     run_cmd(["git", "pull", "origin", base_branch], cwd=local_path)

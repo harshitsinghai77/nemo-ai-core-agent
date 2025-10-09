@@ -4,8 +4,6 @@ from aws_cdk import (
     Duration,
     aws_lambda as _lambda,
     aws_sqs as _sqs,
-    aws_ecr as _ecr,
-    aws_ecs as _ecs,
     aws_lambda_event_sources as _event_sources,
     aws_iam as _iam,
     CfnOutput,
@@ -25,15 +23,6 @@ class NemoCoreAgentStack(Stack):
             display_name='nemo-ai-agentic-lambda-container'
         )
 
-        ecr_repo = _ecr.Repository.from_repository_name(
-            self, "NemoAIEcrRepo", repository_name="nemo-ai-agent"
-        )
-        
-        ecs_docker_image = _ecs.ContainerImage.from_ecr_repository(
-            repository=ecr_repo,
-            tag='latest'
-        )
-
         docker_lambda = _lambda.DockerImageFunction(
             self, "NemoAgentDockerLambda",
             code=_lambda.DockerImageCode.from_ecr(
@@ -43,7 +32,8 @@ class NemoCoreAgentStack(Stack):
             memory_size=1024,
             timeout=Duration.seconds(900),
             environment={
-                "AWS_ACCOUNT_ID": aws_account
+                "LOG_LEVEL": "INFO",
+                "AWS_ACCOUNT_ID": aws_account,
             }
         )
 
@@ -86,7 +76,7 @@ class NemoCoreAgentStack(Stack):
                 actions=[
                     "secretsmanager:GetSecretValue"
                 ],
-                resources=[f"arn:aws:secretsmanager:us-east-1:{aws_account}:secret:github_personal_access_token-2irUt7"],
+                resources=[f"arn:aws:secretsmanager:us-east-1:{aws_account}:secret:github_personal_access_token-mhV2eN"],
             )
         )
 
