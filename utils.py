@@ -1,4 +1,9 @@
+import json
 from urllib.parse import urlparse
+
+import boto3
+
+secrets_manager_client = boto3.client('secretsmanager', region_name='us-east-1')
 
 def parse_github_url(github_url: str):
     """
@@ -23,3 +28,23 @@ def parse_github_url(github_url: str):
     clone_url = f"{github_url}.git" if not github_url.endswith(".git") else github_url
 
     return clone_url, project_name
+
+def get_github_personal_access_token(secret_arn: str) -> str:
+    """Fetch a secret from AWS Secrets Manager using its ARN."""
+    try:
+        response = secrets_manager_client.get_secret_value(SecretId=secret_arn)
+        secret_str = response.get('SecretString')
+
+        if not secret_str:
+            raise ValueError("SecretString not found in secret.")
+
+        secret_dict = json.loads(secret_str)
+
+        token = secret_dict.get('token')
+        if not token:
+            raise ValueError("'token' key not found in secret.")
+
+        return token
+    except Exception as e:
+        print(f"[ERROR] Could not retrieve GitHub PAT: {e}")
+        raise

@@ -1,3 +1,3 @@
 import os
 
-GITHUB_PERSONAL_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
+GIHUB_SECRET_ARN = 'arn:aws:secretsmanager:us-east-1:{aws_account_id}:secret:github_personal_access_token-2irUt7'

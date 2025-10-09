@@ -286,13 +286,13 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
     aws_documentation_mcp = MCPClient(lambda: streamablehttp_client("https://knowledge-mcp.global.api.aws"))
 
     try:
-        async with context7_mcp, aws_documentation_mcp:
+        with context7_mcp, aws_documentation_mcp:
             logging.info("✅ Context7 client connected successfully")
             logging.info("✅ AWS Documentation MCP client connected successfully")
 
             try:
-                context7_tools = await context7_mcp.list_tools()
-                aws_documentation_tools = await aws_documentation_mcp.list_tools()
+                context7_tools = context7_mcp.list_tools_sync()
+                aws_documentation_tools = aws_documentation_mcp.list_tools_sync()
                 logging.info(f"✅ AWS Documentation MCP {len(aws_documentation_tools)} tools available")
                 logging.info(f"✅ Context7 MCP {len(context7_tools)} tools available")
             except Exception as e:

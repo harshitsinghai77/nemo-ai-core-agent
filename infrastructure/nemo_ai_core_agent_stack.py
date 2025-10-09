@@ -42,6 +42,9 @@ class NemoCoreAgentStack(Stack):
             ),
             memory_size=1024,
             timeout=Duration.seconds(900),
+            environment={
+                "AWS_ACCOUNT_ID": aws_account
+            }
         )
 
         queue = _sqs.Queue.from_queue_arn(
@@ -75,6 +78,15 @@ class NemoCoreAgentStack(Stack):
                     "bedrock-agentcore:GetCodeInterpreter"
                 ],
                 resources=["*"],
+            )
+        )
+
+        docker_lambda.add_to_role_policy(
+            _iam.PolicyStatement(
+                actions=[
+                    "secretsmanager:GetSecretValue"
+                ],
+                resources=[f"arn:aws:secretsmanager:us-east-1:{aws_account}:secret:github_personal_access_token-2irUt7"],
             )
         )
 

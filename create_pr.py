@@ -2,7 +2,8 @@ import os
 import subprocess
 from github import Github, Auth
 
-from constants import GITHUB_PERSONAL_ACCESS_TOKEN
+from constants import GIHUB_SECRET_ARN
+from utils import get_github_personal_access_token
 
 def run_cmd(cmd, cwd=None):
     print(f"$ {' '.join(cmd)}")
@@ -49,14 +50,21 @@ def commit_and_push(repo_url: str, project_name: str, story_id: str):
     run_cmd(["git", "commit", "-m", f"{story_id}: automated changes"], cwd=repo_path)
 
     # Push with token
-    remote_url_with_token = f"https://{GITHUB_PERSONAL_ACCESS_TOKEN}@{repo_url.split('https://')[1]}"
+    secret_arn = GIHUB_SECRET_ARN.format(aws_account_id=os.getenv('AWS_ACCOUNT_ID'))
+    personal_access_token = get_github_personal_access_token(secret_arn=secret_arn)
+
+    remote_url_with_token = f"https://{personal_access_token}@{repo_url.split('https://')[1]}"
     run_cmd(["git", "remote", "set-url", "origin", remote_url_with_token], cwd=repo_path)
     run_cmd(["git", "push", "-u", "origin", new_branch], cwd=repo_path)
 
     return new_branch
 
 def create_pr(repo_url: str, pr_body: str, story_id: str, base_branch="main"):
-    auth = Auth.Token(GITHUB_PERSONAL_ACCESS_TOKEN)
+
+    secret_arn = GIHUB_SECRET_ARN.format(aws_account_id=os.getenv('AWS_ACCOUNT_ID'))
+    personal_access_token = get_github_personal_access_token(secret_arn=secret_arn)
+
+    auth = Auth.Token(personal_access_token)
     g = Github(auth=auth)
 
     repo_name = repo_url.split("github.com/")[-1].replace(".git", "")
