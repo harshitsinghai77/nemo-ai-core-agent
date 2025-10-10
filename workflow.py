@@ -340,19 +340,15 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
                 start_line = change.get("start_line")
                 end_line = change.get("end_line")
                 file_content = file_read.read_file_lines(console=console, file_path=file_path, start_line=int(start_line), end_line=int(end_line))
-                combined_changes.append(f"File: {file_path}\nChange Type: {change_type}\nLines: {start_line}-{end_line}\nContent:\n{file_content}\n\n")
+                if not file_content or all(line.strip() == "" for line in file_content):
+                    continue
+                combined_changes.append(f"File: {file_path}\nChange Type: {change_type}\nLines: {start_line}-{end_line}\nContent:```python\n{"".join(file_content)}\n```\n\n")
             
             for change in combined_changes:
-                print(f"Change:\\n{change}")
+                print(f"Change: {change}")
 
-            review_task = f"""
-            Jira Story: {jira_story}
-            
-            Implementation Plan: {plan}
-            
-            Changes to review: {''.join(combined_changes)}
-            """
-            print(f"Code review task:\\n{review_task}")
+            review_task = f"""Changes to review:\n{"".join(combined_changes)}"""
+            print(f"==>> review_task: \n{review_task}")
             
             start_time = time.perf_counter()
             feedback_results = await asyncio.gather(*[

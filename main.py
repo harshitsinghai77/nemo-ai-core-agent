@@ -44,7 +44,6 @@ def lambda_handler(event, context):
         "body": "Lambda executed. All messages processed."
     }
 
-  
 if __name__ == "__main__":
     dummy_event = {
         "detail": {

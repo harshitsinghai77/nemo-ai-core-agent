@@ -1,7 +1,6 @@
 import subprocess
 import re
 import os
-import json
 from typing import List, Dict, Any, Optional
 
 def run_cmd(cmd: List[str], cwd: Optional[str] = None) -> str:
@@ -27,8 +26,8 @@ def parse_diff(diff_text: str, change_type: str, project_name: str) -> List[Dict
         elif line.startswith("@@") and current_file:
             match = re.search(r"\+(\d+)(?:,(\d+))?", line)
             if match:
-                start_line = int(match.group(1))
-                length = int(match.group(2) or 1)
+                start_line = max(int(match.group(1)) - 1, 0)
+                length = int(match.group(2) or 1) + 1
                 end_line = start_line + length - 1
                 changes.append({
                     "file_path": f"/tmp/{project_name}/{current_file}",
