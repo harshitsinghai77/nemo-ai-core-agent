@@ -10,11 +10,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 async def run_nemo_agent_workflow(github_link: str, jira_story: str, jira_story_id: str, is_data_analysis_task: bool) -> dict:
-    """
-    Runs the full AI agentic workflow: clone → run agent → create PR.
-    Returns a dictionary with result and PR status.
-    Raises Exception if any step fails.
-    """
+    """Runs the Agentic Workflow."""
     # Extract repo details
     clone_url, project_name = parse_github_url(github_link)
 

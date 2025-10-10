@@ -224,7 +224,7 @@ class DataAnalystWorkflow:
     def __init__(self, project_name: str, jira_story_id: str, session_timeout: int = 1200):
         self.project_name = project_name
         self.jira_story_id = jira_story_id
-        self.project_path = f"./tmp/{project_name}"
+        self.project_path = f"/tmp/{project_name}"
         self.session = CodeInterpreterSession(session_timeout=session_timeout)
         self.agent: Optional[DataAnalystAgent] = None
 
