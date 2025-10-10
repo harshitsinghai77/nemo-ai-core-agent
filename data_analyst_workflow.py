@@ -219,7 +219,7 @@ class DataAnalystAgent:
             if "data" in event:
                 chunk = event["data"]
                 response_text += chunk
-                logger.info(chunk, end="")
+                print(chunk, end="")
         return response_text
 
 class DataAnalystWorkflow:
