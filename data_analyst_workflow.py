@@ -1,9 +1,9 @@
 import os
+import logging
 import json
 from urllib.parse import urlparse
 from typing import Dict, Any, List, Optional
 
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 import boto3
 from botocore.config import Config
 from bedrock_agentcore.tools.code_interpreter_client import CodeInterpreter
@@ -11,6 +11,9 @@ from strands import Agent, tool
 from strands.models import BedrockModel
 
 from prompt.agent_prompt import data_analyst_prompt
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 session = boto3.Session()
 
@@ -38,7 +41,7 @@ class FileHandler:
                     relative_path = os.path.relpath(file_path, project_dir)
                     files_to_create.append({"path": f"nemo_files/{relative_path}", "text": content})
                 except Exception as e:
-                    print(f"Error reading file {file_path}: {e}")
+                    logger.info(f"Error reading file {file_path}: {e}")
         return files_to_create
 
 class CodeInterpreterSession:
@@ -53,13 +56,13 @@ class CodeInterpreterSession:
         """Start the Code Interpreter session."""
         self.client = CodeInterpreter(region="us-east-1", session=session)
         self.client.start(session_timeout_seconds=self.session_timeout, identifier=self.code_interpreter_id)
-        print(f"Code Interpreter session started in us-east-1")
+        logger.info(f"Code Interpreter session started in us-east-1")
 
     def stop(self) -> None:
         """Stop the Code Interpreter session."""
         if self.client:
             self.client.stop()
-            print("Code Interpreter session stopped successfully!")
+            logger.info("Code Interpreter session stopped successfully!")
 
     def get_or_create_code_interpreter_id(self, interpreter_name: str = "nemo_ai_code_interpreter_v1") -> str:
         """Get or create the Code Interpreter session ID."""
@@ -93,21 +96,22 @@ class CodeInterpreterSession:
     def upload_files(self, files_to_create: List[Dict[str, str]]) -> None:
         """Upload files into the Code Interpreter sandbox."""
         result = self.invoke_tool("writeFiles", {"content": files_to_create})
-        print("Writing files result:", result)
+        logger.info("Writing files result:", result)
         return result
 
     def list_files(self, directoryPath: str = 'nemo_files/') -> None:
         """List all files in the Code Interpreter sandbox."""
         listing_result = self.invoke_tool("listFiles", {"directoryPath": directoryPath})
-        print(f"\nFiles in sandbox {directoryPath}:", listing_result)
+        logger.info(f"\nFiles in sandbox {directoryPath}:", listing_result)
         return listing_result
 
     def export_files(self, output_dir: str) -> None:
         """Export all files from the sandbox environment into the local directory."""
         
+        logger.info(f"Exporting files from sandbox to {output_dir}...")
         result = [file['uri'] for file in json.loads(self.list_files())['content']]
         if not result:
-            print("No files found in sandbox.")
+            logger.info("No files found in sandbox.")
             return
 
         response = self.client.invoke("readFiles", {
@@ -137,16 +141,15 @@ class CodeInterpreterSession:
                 if mime_type.startswith("text") and text_data is not None:
                     with open(local_path, "w", encoding="utf-8") as f:
                         f.write(text_data)
-                    print(f"✅ Saved text file: {local_path}")
+                    logger.info(f"✅ Saved text file: {local_path}")
 
                 # Save binary files (images, etc.)
                 elif (mime_type.startswith("image") or mime_type == "application/pdf") and blob_data is not None:
                     with open(local_path, "wb") as f:
                         f.write(blob_data)
-                    print(f"🖼️ Saved binary file: {local_path}")
-
+                    logger.info(f"🖼️ Saved binary file: {local_path}")
                 else:
-                    print(f"⚠️ Skipped unsupported or empty file: {uri}")
+                    logger.info(f"⚠️ Skipped unsupported or empty file: {uri}")
         return True
 
 class DataAnalystAgent:
@@ -158,12 +161,6 @@ class DataAnalystAgent:
         self.jira_story_id = jira_story_id
         self.agent = self._setup_agent()
     
-    @retry(
-        stop=stop_after_attempt(1),
-        wait=wait_exponential(multiplier=1, min=1, max=10),
-        retry=retry_if_exception_type((Exception)),
-        before_sleep=lambda retry_state: print(f"Retrying workflow, attempt {retry_state.attempt_number}...")
-    )
     def _setup_agent(self) -> Agent:
         """Set up the Strands agent with the model and tools."""
         model = BedrockModel(
@@ -184,7 +181,7 @@ class DataAnalystAgent:
             """Execute Python code in the sandbox."""
             if description:
                 code = f"# {description}\n{code}"
-            print(f"\nGenerated Code: {code}")
+            logger.info(f"\nGenerated Code: {code}")
             response = self.session.client.invoke("executeCode", {
                 "code": code,
                 "language": "python",
@@ -192,14 +189,14 @@ class DataAnalystAgent:
             })
             for event in response["stream"]:
                 res = json.dumps(event["result"])
-                print(f"==>> res of execute_python: {res}")
+                logger.info(f"==>> res of execute_python: {res}")
                 return res
             return "{}"
 
         @tool
         def execute_command(command: str, description: str = "") -> str:
             """Execute a shell command inside the sandbox interpreter."""
-            print(f"\n[{description}] Running command inside Sandbox: {command}")
+            logger.info(f"\n[{description}] Running command inside Sandbox: {command}")
             response = self.session.client.invoke("executeCommand", {
                 "command": command
             })
@@ -222,7 +219,7 @@ class DataAnalystAgent:
             if "data" in event:
                 chunk = event["data"]
                 response_text += chunk
-                print(chunk, end="")
+                logger.info(chunk, end="")
         return response_text
 
 class DataAnalystWorkflow:
@@ -253,7 +250,7 @@ class DataAnalystWorkflow:
 
     async def start_analysis(self, jira_story: str) -> str:
         """Start the analysis for the provided Jira story."""
-        print(f"\n\nProcessing Jira Story: {jira_story}\n")
+        logger.info(f"\n\nProcessing Jira Story: {jira_story}\n")
         return await self.agent.run(jira_story)
 
     def export_outputs(self) -> None:
@@ -270,7 +267,7 @@ async def data_analyst_workflow(project_name: str, jira_story: str, jira_story_i
     try:
         workflow.setup()
         response_text = await workflow.start_analysis(jira_story)
-        print(f"\n\nComplete Response Text:\n{response_text}\n")
+        logger.info(f"\n\nComplete Response Text:\n{response_text}\n")
         workflow.export_outputs()
         return {"response_text": response_text, "project_path": workflow.project_path}
     finally:
