@@ -332,9 +332,6 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
             print("Step 4: Code review phase")
             
             code_diffs = format_manifest_code_diffs(change_manifest) 
-            for change in code_diffs:
-                print(f"Change: {change}")
-
             review_task = f"""Changes to review:\n{code_diffs}"""
             print(f"==>> review_task: \n{review_task}")
             

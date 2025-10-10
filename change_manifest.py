@@ -90,7 +90,7 @@ def get_manifest(project_name: str, py_only: bool = True) -> Dict[str, Any]:
 def format_manifest_code_diffs(manifest: Dict[str, Any]) -> str:
     """ Generate a human-readable code change summaries from a change manifest."""
     combined_changes: List[str] = []
-    console: Console = console_util.create()
+    console = console_util.create()
 
     for change in manifest.get("changes", []):
         file_path: str = change.get("file_path")
