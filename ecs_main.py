@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+import asyncio
 
 load_dotenv()
 
@@ -17,7 +18,7 @@ def start_ecs_task():
         exit(1)
     
     try:
-        output = run_nemo_agent_workflow(github_link=github_link, jira_story=jira_story, jira_story_id=jira_story_id, is_data_analysis_task=is_data_analysis_task)
+        output = asyncio.run(run_nemo_agent_workflow(github_link=github_link, jira_story=jira_story, jira_story_id=jira_story_id, is_data_analysis_task=is_data_analysis_task))
         print(f"✅ Workflow result: {output}")
         print("✅ ECS Task completed successfully.")
         exit(0)
