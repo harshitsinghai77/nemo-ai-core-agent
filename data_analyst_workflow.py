@@ -108,8 +108,9 @@ class CodeInterpreterSession:
     def export_files(self, output_dir: str) -> None:
         """Export all files from the sandbox environment into the local directory."""
         
-        logger.info(f"Exporting files from sandbox to {output_dir}...")
+        logger.info(f"Exporting files from sandbox to {output_dir}")
         result = [file['uri'] for file in json.loads(self.list_files())['content']]
+        logger.info("result", result)
         if not result:
             logger.info("No files found in sandbox.")
             return
@@ -117,10 +118,13 @@ class CodeInterpreterSession:
         response = self.client.invoke("readFiles", {
             "paths": result
         })
-
+        logger.info(f"==>> response: {response}")
+        
         for event in response["stream"]:
+            logger.info(f"==>> event: {event}")
             result = event.get("result", {})
             content_list = result.get("content", [])
+            logger.info(f"==>> content_list: {content_list}")
 
             for item in content_list:
                 if item.get("type") != "resource":
@@ -136,6 +140,7 @@ class CodeInterpreterSession:
                 parsed_uri = urlparse(uri)
                 file_name = os.path.basename(parsed_uri.path)
                 local_path = os.path.join(output_dir, file_name)
+                logger.info(f"==>> local_path: {local_path}")
 
                 # Save text files (CSV, etc.)
                 if mime_type.startswith("text") and text_data is not None:
@@ -272,18 +277,3 @@ async def data_analyst_workflow(project_name: str, jira_story: str, jira_story_i
         return {"response_text": response_text, "project_path": workflow.project_path}
     finally:
         workflow.cleanup()
-
-
-if __name__ == "__main__":
-    import asyncio
-    # Demo call:
-    asyncio.run(data_analyst_workflow(
-        "pokemon", 
-        """
-            Description:
-            We have a dataset of Pokemon with their stats called pokemon.csv 
-
-            Create a line graph and bar chart of most weakest pokemon and most strongest pokemon.
-        """,
-        "JIRA-123"
-    ))
