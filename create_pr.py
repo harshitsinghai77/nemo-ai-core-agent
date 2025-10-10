@@ -17,7 +17,6 @@ class GitHubPRManager:
         self.aws_account_id = os.getenv("AWS_ACCOUNT_ID")
         self.secret_arn = GIHUB_SECRET_ARN.format(aws_account_id=self.aws_account_id)
         self.token = get_github_personal_access_token(secret_arn=self.secret_arn)
-
         auth = Auth.Token(self.token)
         self.github_client = Github(auth=auth)
 
@@ -25,7 +24,8 @@ class GitHubPRManager:
         print(f"$ {' '.join(cmd)}")
         result = subprocess.run(cmd, cwd=cwd, text=True, capture_output=True)
         if result.returncode != 0:
-            raise RuntimeError(f"Command failed: {result.stderr.strip()}")
+            print(f"Command failed: {result} {result.stderr.strip()}")
+            raise RuntimeError(f"Command failed: {result} {result.stderr.strip()}")
         return result.stdout.strip()
 
     def clean_tmp_directory(self):
