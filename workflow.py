@@ -16,11 +16,10 @@ from strands import Agent, tool
 from strands.models import BedrockModel
 from strands.tools.mcp import MCPClient
 from mcp.client.streamable_http import streamablehttp_client
-from custom_tools.utils import console_util
 
 # from ast_reader import MemoryCodeIndex
-from change_manifest import get_manifest
 from custom_tools import editor, file_read, file_write, shell
+from change_manifest import get_manifest, format_manifest_code_diffs
 from prompt.agent_prompt import (
     planner_prompt,
     senior_engineer_prompt,
@@ -331,23 +330,12 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
             print(f"Manifest captured {len(change_manifest.get('changes', []))} file changes")
 
             print("Step 4: Code review phase")
-
-            combined_changes = []
-            console = console_util.create()
-            for change in change_manifest.get("changes", []):
-                file_path = change.get("file_path")
-                change_type = change.get("change_type")
-                start_line = change.get("start_line")
-                end_line = change.get("end_line")
-                file_content = file_read.read_file_lines(console=console, file_path=file_path, start_line=int(start_line), end_line=int(end_line))
-                if not file_content or all(line.strip() == "" for line in file_content):
-                    continue
-                combined_changes.append(f"File: {file_path}\nChange Type: {change_type}\nLines: {start_line}-{end_line}\nContent:```python\n{"".join(file_content)}\n```\n\n")
             
-            for change in combined_changes:
+            code_diffs = format_manifest_code_diffs(change_manifest) 
+            for change in code_diffs:
                 print(f"Change: {change}")
 
-            review_task = f"""Changes to review:\n{"".join(combined_changes)}"""
+            review_task = f"""Changes to review:\n{code_diffs}"""
             print(f"==>> review_task: \n{review_task}")
             
             start_time = time.perf_counter()
@@ -389,7 +377,8 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
             
             # Update manifest after revisions
             change_manifest = get_manifest(project_name=project_name, py_only=True)
-        
+            code_diffs = format_manifest_code_diffs(change_manifest) 
+
             print("Step 6: Story scoring phase")
                
             score_task = f"""
@@ -397,19 +386,18 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
             
             Implementation Plan: {plan}
             
-            Changes Manifest: {json.dumps(change_manifest, indent=2)}
+            Changes Manifest: {code_diffs}
             
             Final Implementation Summary: {change_summary}
             
             Evaluate whether the implementation fulfills the Jira story requirements.
             Use file_read to review the actual changed code sections from the manifest.
             """
-            
             score = str(story_scoring_agent(score_task))
             print(f"Story score: {score}")
 
             print("Step 7: Generating PR documentation")
-            
+
             doc_agent = Agent(
                 name='doc_agent',
                 model=bedrock_nova_pro_model,
@@ -430,17 +418,15 @@ async def nemo_workflow(project_name: str, jira_story: str, jira_story_id: str) 
             
             Changes Summary: {change_summary}
             
-            Changes Manifest: {json.dumps(change_manifest, indent=2)}
+            Changes Manifest: {code_diffs}
             
             Story Score: {score}
             
             Create a comprehensive PR body markdown file at /tmp/{project_name}/{jira_story_id}.md
             """
-            
             doc_result = str(doc_agent(doc_task))
             print(f"doc_result", doc_result)
             print("PR documentation generated successfully")
-
             
             return json.dumps({
                 "status": "success",

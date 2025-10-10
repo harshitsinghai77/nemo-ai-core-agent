@@ -3,6 +3,9 @@ import re
 import os
 from typing import List, Dict, Any, Optional
 
+from custom_tools import file_read
+from custom_tools.utils import console_util
+
 def run_cmd(cmd: List[str], cwd: Optional[str] = None) -> str:
     """Run a shell command inside the given cwd and return stdout."""
     result = subprocess.run(
@@ -38,7 +41,6 @@ def parse_diff(diff_text: str, change_type: str, project_name: str) -> List[Dict
                 })
     return changes
 
-
 def get_untracked_files(cwd: str, project_name: str) -> List[Dict[str, Any]]:
     out = run_cmd(["git", "ls-files", "--others", "--exclude-standard"], cwd=cwd)
     files = out.splitlines() if out else []
@@ -62,8 +64,6 @@ def get_untracked_files(cwd: str, project_name: str) -> List[Dict[str, Any]]:
             })
     return entries
 
-
-
 def get_manifest(project_name: str, py_only: bool = True) -> Dict[str, Any]:
     repo_path = os.path.join("/tmp", project_name)
     manifest: Dict[str, Any] = {"changes": []}
@@ -86,3 +86,34 @@ def get_manifest(project_name: str, py_only: bool = True) -> Dict[str, Any]:
         ]
 
     return manifest
+
+def format_manifest_code_diffs(manifest: Dict[str, Any]) -> str:
+    """ Generate a human-readable code change summaries from a change manifest."""
+    combined_changes: List[str] = []
+    console: Console = console_util.create()
+
+    for change in manifest.get("changes", []):
+        file_path: str = change.get("file_path")
+        change_type: str = change.get("change_type")
+        start_line: int = change.get("start_line", 0)
+        end_line: int = change.get("end_line", 0)
+
+        file_content: List[str] = file_read.read_file_lines(
+            console=console,
+            file_path=file_path,
+            start_line=int(start_line),
+            end_line=int(end_line)
+        )
+
+        if not file_content or all(line.strip() == "" for line in file_content):
+            continue
+
+        change_summary: str = (
+            f"File: {file_path}\n"
+            f"Change Type: {change_type}\n"
+            f"Lines: {start_line}-{end_line}\n"
+            f"Content:```python\n{''.join(file_content)}\n```\n\n"
+        )
+        combined_changes.append(change_summary)
+
+    return "".join(combined_changes)
