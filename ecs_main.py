@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+import traceback
 import asyncio
 
 load_dotenv()
@@ -25,6 +26,7 @@ def start_ecs_task():
 
     except Exception as e:
         print(f"❌ Error during ECS task: {str(e)}")
+        traceback.print_exc()
         exit(1)
 
 if __name__ == "__main__":

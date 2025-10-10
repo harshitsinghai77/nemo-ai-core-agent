@@ -3,6 +3,7 @@ import json
 from urllib.parse import urlparse
 from typing import Dict, Any, List, Optional
 
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 import boto3
 from botocore.config import Config
 from bedrock_agentcore.tools.code_interpreter_client import CodeInterpreter
@@ -156,7 +157,13 @@ class DataAnalystAgent:
         self.project_name = project_name
         self.jira_story_id = jira_story_id
         self.agent = self._setup_agent()
-
+    
+    @retry(
+        stop=stop_after_attempt(1),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        retry=retry_if_exception_type((Exception)),
+        before_sleep=lambda retry_state: print(f"Retrying workflow, attempt {retry_state.attempt_number}...")
+    )
     def _setup_agent(self) -> Agent:
         """Set up the Strands agent with the model and tools."""
         model = BedrockModel(
