@@ -102,7 +102,7 @@ class CodeInterpreterSession:
     def list_files(self, directoryPath: str = 'nemo_files/') -> None:
         """List all files in the Code Interpreter sandbox."""
         listing_result = self.invoke_tool("listFiles", {"directoryPath": directoryPath})
-        logger.info(f"\nFiles in sandbox {directoryPath}:", listing_result)
+        print(f"\nFiles in sandbox {directoryPath}:", listing_result)
         return listing_result
 
     def export_files(self, output_dir: str) -> None:

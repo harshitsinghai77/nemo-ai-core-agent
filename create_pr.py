@@ -57,6 +57,7 @@ class GitHubPRManager:
         self.run_cmd(["git", "config", "user.name", "nemo-ai"], cwd=self.repo_path)
 
         self.run_cmd(["git", "checkout", "-b", new_branch], cwd=self.repo_path)
+        self.run_cmd(["git", "status"], cwd=self.repo_path)
         self.run_cmd(["git", "add", "."], cwd=self.repo_path)
         self.run_cmd(["git", "commit", "-m", f"{self.story_id}: automated changes"], cwd=self.repo_path)
 
