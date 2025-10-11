@@ -96,21 +96,44 @@ class CodeInterpreterSession:
     def upload_files(self, files_to_create: List[Dict[str, str]]) -> None:
         """Upload files into the Code Interpreter sandbox."""
         result = self.invoke_tool("writeFiles", {"content": files_to_create})
-        logger.info("Writing files result:", result)
         return result
 
-    def list_files(self, directoryPath: str = 'nemo_files/') -> None:
+    def list_files(self, directory_path: str = 'nemo_files/') -> None:
         """List all files in the Code Interpreter sandbox."""
-        listing_result = self.invoke_tool("listFiles", {"directoryPath": directoryPath})
-        print(f"\nFiles in sandbox {directoryPath}:", listing_result)
-        return listing_result
+        listing_result = self.invoke_tool("listFiles", {"directoryPath": directory_path})
+        return json.loads(listing_result)
+    
+    def collect_all_files(self, base_path: str = "nemo_files/") -> list:
+        """Recursively collect all file URIs in sandbox, excluding directories."""
+        file_uris = []
+
+        def recurse(directory_path):
+            logger.info(f"Listing: {directory_path}")
+            listing = self.list_files(directory_path)
+
+            if listing.get("isError"):
+                logger.warning(f"Error listing directory: {directory_path}")
+                return
+
+            for item in listing.get("content", []):
+                uri = item.get("uri")
+                description = item.get("description", "")
+                if description == "File":
+                    file_uris.append(uri)
+                elif description == "Directory":
+                    # Parse the path from URI
+                    parsed = urlparse(uri)
+                    sub_path = parsed.path.lstrip("/")  # Remove leading '/'
+                    recurse(sub_path)
+
+        recurse(base_path)
+        return file_uris
 
     def export_files(self, output_dir: str) -> None:
         """Export all files from the sandbox environment into the local directory."""
         
         logger.info(f"Exporting files from sandbox to {output_dir}")
         result = [file['uri'] for file in json.loads(self.list_files())['content']]
-        logger.info("result", result)
         if not result:
             logger.info("No files found in sandbox.")
             return
@@ -118,13 +141,10 @@ class CodeInterpreterSession:
         response = self.client.invoke("readFiles", {
             "paths": result
         })
-        logger.info(f"==>> response: {response}")
         
         for event in response["stream"]:
-            logger.info(f"==>> event: {event}")
             result = event.get("result", {})
             content_list = result.get("content", [])
-            logger.info(f"==>> content_list: {content_list}")
 
             for item in content_list:
                 if item.get("type") != "resource":
