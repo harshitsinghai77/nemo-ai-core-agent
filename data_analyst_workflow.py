@@ -133,14 +133,15 @@ class CodeInterpreterSession:
         """Export all files from the sandbox environment into the local directory."""
         
         logger.info(f"Exporting files from sandbox to {output_dir}")
-        result = [file['uri'] for file in json.loads(self.list_files())['content']]
-        if not result:
+        
+        file_uris = self.collect_all_files()
+        if not file_uris:
             logger.info("No files found in sandbox.")
             return
 
-        response = self.client.invoke("readFiles", {
-            "paths": result
-        })
+        logger.info(f"Total files found: {len(file_uris)}")
+
+        response = self.client.invoke("readFiles", { "paths": file_uris })
         
         for event in response["stream"]:
             result = event.get("result", {})
@@ -160,7 +161,6 @@ class CodeInterpreterSession:
                 parsed_uri = urlparse(uri)
                 file_name = os.path.basename(parsed_uri.path)
                 local_path = os.path.join(output_dir, file_name)
-                logger.info(f"==>> local_path: {local_path}")
 
                 # Save text files (CSV, etc.)
                 if mime_type.startswith("text") and text_data is not None:
