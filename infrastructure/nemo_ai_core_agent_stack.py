@@ -1,4 +1,6 @@
 import os
+from dotenv import load_dotenv
+
 from aws_cdk import (
     Stack,
     Duration,
@@ -10,6 +12,11 @@ from aws_cdk import (
 )
 from constructs import Construct
 from aws_cdk.aws_ecr_assets import DockerImageAsset
+
+load_dotenv(dotenv_path='.lambda.env')
+open_telemetry_envs = {
+    key: value for key, value in os.environ.items() if key.startswith("OTEL_")
+}
 
 class NemoCoreAgentStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
@@ -34,6 +41,8 @@ class NemoCoreAgentStack(Stack):
             environment={
                 "LOG_LEVEL": "INFO",
                 "AWS_ACCOUNT_ID": aws_account,
+                "FUNCTION_NAME": docker_lambda.function_name,
+                **open_telemetry_envs
             }
         )
 

@@ -1,14 +1,21 @@
+import os
 import json
 import asyncio
 from dotenv import load_dotenv
 
+from opentelemetry import baggage, context
+
 from run_workflow import run_nemo_agent_workflow
+from utils import set_otel_exporter_oltp_log_headers
 
 load_dotenv()
 
 def lambda_handler(event, context):
+
+    if context.aws_request_id and os.getenv("FUNCTION_NAME"):
+        set_otel_exporter_oltp_log_headers(function_name=os.getenv("FUNCTION_NAME"), log_stream_name=context.aws_request_id)
+
     # Get the JIRA story description from the event body
-    
     if "Records" not in event:
         return {
             "statusCode": 200,

@@ -1,3 +1,4 @@
+import os
 import json
 from urllib.parse import urlparse
 
@@ -48,3 +49,8 @@ def get_github_personal_access_token(secret_arn: str) -> str:
     except Exception as e:
         print(f"[ERROR] Could not retrieve GitHub PAT: {e}")
         raise
+
+def set_otel_exporter_oltp_log_headers(log_group: str, function_name: str, metric_namespace: str = 'nemo-ai-core-agent'):
+    """Set OTEL_EXPORTER_OTLP_LOGS_HEADERS environment variable."""
+    otel_log_headers = f"x-aws-log-group={log_group},x-aws-log-stream='/aws/lambda/{function_name}',x-aws-metric-namespace={metric_namespace}"
+    os.environ["OTEL_EXPORTER_OTLP_LOGS_HEADERS"] = otel_log_headers

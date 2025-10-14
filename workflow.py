@@ -1,6 +1,7 @@
 import os
 import re
 import json
+import logging
 import time
 import asyncio
 import traceback
@@ -33,6 +34,8 @@ from prompt.agent_prompt import (
 
 # Set the environment variable
 os.environ["LOG_LEVEL"] = "INFO"  # or "INFO", "WARNING", "ERROR"
+
+logging.getLogger("strands").setLevel(logging.INFO)
 
 # Configure Python logging
 # logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
