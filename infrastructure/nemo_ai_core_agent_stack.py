@@ -41,7 +41,7 @@ class NemoCoreAgentStack(Stack):
             environment={
                 "LOG_LEVEL": "INFO",
                 "AWS_ACCOUNT_ID": aws_account,
-                'FUNCTION_NAME': 'NemoCoreAgentStack-NemoAgentDockerLambdaE5A8DE9A-IXbyVts3P4Au'
+                'FUNCTION_NAME': 'NemoCoreAgentStack-NemoAgentDockerLambdaE5A8DE9A-IXbyVts3P4Au',
                 **open_telemetry_envs
             }
         )
