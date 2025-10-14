@@ -41,10 +41,10 @@ class NemoCoreAgentStack(Stack):
             environment={
                 "LOG_LEVEL": "INFO",
                 "AWS_ACCOUNT_ID": aws_account,
-                "FUNCTION_NAME": docker_lambda.function_name,
                 **open_telemetry_envs
             }
         )
+        docker_lambda.add_environment("FUNCTION_NAME", docker_lambda.function_name)
 
         queue = _sqs.Queue.from_queue_arn(
             self,
