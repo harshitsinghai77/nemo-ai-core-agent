@@ -180,8 +180,8 @@ class CodeInterpreterSession:
 class DataAnalystAgent:
     """Agent for data analysis using AWS Bedrock and Code Interpreter."""
 
-    def __init__(self, session: CodeInterpreterSession, project_name: str, jira_story_id: str):
-        self.session = session
+    def __init__(self, code_interpreter_session: CodeInterpreterSession, project_name: str, jira_story_id: str):
+        self.code_interpreter_session = code_interpreter_session 
         self.project_name = project_name
         self.jira_story_id = jira_story_id
         self.agent = self._setup_agent()
@@ -207,7 +207,7 @@ class DataAnalystAgent:
             if description:
                 code = f"# {description}\n{code}"
             logger.info(f"\nGenerated Code: {code}")
-            response = self.session.client.invoke("executeCode", {
+            response = self.code_interpreter_session.client.invoke("executeCode", {
                 "code": code,
                 "language": "python",
                 "clearContext": False
@@ -222,7 +222,7 @@ class DataAnalystAgent:
         def execute_command(command: str, description: str = "") -> str:
             """Execute a shell command inside the sandbox interpreter."""
             logger.info(f"\n[{description}] Running command inside Sandbox: {command}")
-            response = self.session.client.invoke("executeCommand", {
+            response = self.code_interpreter_session.client.invoke("executeCommand", {
                 "command": command
             })
 
@@ -254,21 +254,21 @@ class DataAnalystWorkflow:
         self.project_name = project_name
         self.jira_story_id = jira_story_id
         self.project_path = f"/tmp/{project_name}"
-        self.session = CodeInterpreterSession(session_timeout=session_timeout)
+        self.code_interpreter_session = CodeInterpreterSession(session_timeout=session_timeout)
         self.agent: Optional[DataAnalystAgent] = None
 
     def setup(self) -> None:
         """Set up the workflow with necessary components."""
-        self.session.start()
+        self.code_interpreter_session.start()
 
         files_to_create = FileHandler.fetch_files(self.project_path)
         if not files_to_create:
             raise ValueError(f"Could not read data from {self.project_path}")
 
-        self.session.upload_files(files_to_create)
+        self.code_interpreter_session.upload_files(files_to_create)
 
         self.agent = DataAnalystAgent(
-            session=self.session,
+            code_interpreter_session=self.code_interpreter_session,
             project_name=self.project_name,
             jira_story_id=self.jira_story_id
         )
@@ -280,11 +280,11 @@ class DataAnalystWorkflow:
 
     def export_outputs(self) -> None:
         """Export sandbox outputs to the project path."""
-        self.session.export_files(self.project_path)
+        self.code_interpreter_session.export_files(self.project_path)
 
     def cleanup(self) -> None:
         """Clean up resources used by the workflow."""
-        self.session.stop()
+        self.code_interpreter_session.stop()
 
 async def data_analyst_workflow(project_name: str, jira_story: str, jira_story_id: str):
     """Run the full data analyst workflow."""

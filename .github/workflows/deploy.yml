@@ -38,18 +38,18 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Log in to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2
+      # - name: Log in to Amazon ECR
+      #   uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build Docker image
-        run: |
-          docker build -t nemo-ai-agent:latest -f Dockerfile_ecs .
+      # - name: Build Docker image
+      #   run: |
+      #     docker build -t nemo-ai-agent:latest -f Dockerfile_ecs .
 
-      - name: Tag and push image to ECR
-        run: |
-          IMAGE_URI=${{ secrets.AWS_DEFAULT_ACCOUNT }}.dkr.ecr.us-east-1.amazonaws.com/nemo-ai-agent:latest
-          docker tag nemo-ai-agent:latest $IMAGE_URI
-          docker push $IMAGE_URI
+      # - name: Tag and push image to ECR
+      #   run: |
+      #     IMAGE_URI=${{ secrets.AWS_DEFAULT_ACCOUNT }}.dkr.ecr.us-east-1.amazonaws.com/nemo-ai-agent:latest
+      #     docker tag nemo-ai-agent:latest $IMAGE_URI
+      #     docker push $IMAGE_URI
 
       - name: Deploy CDK stack
         env:
