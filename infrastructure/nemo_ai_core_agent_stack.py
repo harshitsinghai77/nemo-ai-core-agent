@@ -41,6 +41,7 @@ class NemoCoreAgentStack(Stack):
             environment={
                 "LOG_LEVEL": "INFO",
                 "AWS_ACCOUNT_ID": aws_account,
+                "AGENT_OBSERVABILITY_ENABLED": "true",
                 **open_telemetry_envs
             }
         )

@@ -41,14 +41,6 @@ def lambda_handler(event, context):
             "body": "No records found in the event payload."
         }
     
-    from opentelemetry import trace
-    try:
-        tracer = trace.get_tracer(__name__)
-        with tracer.start_as_current_span("test-span"):
-            print("Span emitted")
-    except Exception as e:
-        raise e
-    
     required_fields = ["github_link", "jira_story", "jira_story_id", "is_data_analysis_task"]
     for record in event["Records"]:
         try:
