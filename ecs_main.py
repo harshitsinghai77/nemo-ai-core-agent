@@ -6,7 +6,30 @@ import asyncio
 
 load_dotenv()
 
-from run_workflow import run_nemo_agent_workflow
+from dotenv import load_dotenv
+load_dotenv()
+import os
+otel_vars = [
+    "OTEL_PYTHON_DISTRO",
+    "OTEL_PYTHON_CONFIGURATOR",
+    "OTEL_EXPORTER_OTLP_PROTOCOL",
+    "OTEL_EXPORTER_OTLP_LOGS_HEADERS",
+    "OTEL_RESOURCE_ATTRIBUTES",
+    "AGENT_OBSERVABILITY_ENABLED",
+    "OTEL_TRACES_EXPORTER"
+]
+os.environ["OTEL_EXPORTER_OTLP_LOGS_HEADERS"] = "x-aws-log-group=/ecs/nemo-ai-container,x-aws-metric-namespace=nemo-ai-ecs"
+
+print("OpenTelemetry Configuration:")
+for var in otel_vars:
+    value = os.getenv(var)
+    if value:
+        print(f"{var}={value}")
+
+# from run_workflow import run_nemo_agent_workflow
+from strands import Agent, tool
+from strands.models import BedrockModel
+import boto3
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -18,13 +41,35 @@ def start_ecs_task():
     jira_story_id = os.getenv("JIRA_STORY_ID")
     is_data_analysis_task = os.getenv("IS_DATA_ANALYSIS_TASK") == "True"
 
-    if not all([github_link, jira_story, jira_story_id]):
+    if not all([github_link, jira_story, jira_story_id, is_data_analysis_task]):
         logger.error("Missing required environment variables.")
         exit(1)
     
     try:
-        output = asyncio.run(run_nemo_agent_workflow(github_link=github_link, jira_story=jira_story, jira_story_id=jira_story_id, is_data_analysis_task=is_data_analysis_task))
-        logger.info(f"✅ Workflow result: {output}")
+        # output = asyncio.run(run_nemo_agent_workflow(github_link=github_link, jira_story=jira_story, jira_story_id=jira_story_id, is_data_analysis_task=is_data_analysis_task))
+        session = boto3.Session()
+        bedrock_nova_pro_model = BedrockModel(
+            model_id='us.amazon.nova-pro-v1:0',
+            boto_session=session,
+        )
+
+        travel_agent = Agent(
+            model=bedrock_nova_pro_model,
+            system_prompt="""You are an experienced travel agent specializing in personalized travel recommendations 
+            with access to real-time web information. You should provide comprehensive recommendations with current 
+            information, brief descriptions, and practical travel details.""",
+        )
+
+        # Execute the travel research task
+        query = """Research and recommend suitable travel destinations for someone looking for cowboy vibes, 
+        rodeos, and museums at Rome Vienna and Austria. Use web search to find current information about venues, 
+        events, and attractions."""
+
+        result = travel_agent(query)
+        print("Result:", result)
+
+        logger.info(f"✅ Workflow result: {result}")
+        # logger.info(f"✅ Workflow result: {output}")
         logger.info("✅ ECS Task completed successfully.")
         exit(0)
 

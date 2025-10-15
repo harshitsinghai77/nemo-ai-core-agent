@@ -81,6 +81,8 @@ def lambda_handler(event, context):
             print("Result:", result)
 
             print(f"✅ Lambda workflow complete: {result}")
+            # print(f"✅ Lambda workflow complete: {output}")
+
             return {"statusCode": 200, "body": "Workflow complete."}
 
         except Exception as e:
