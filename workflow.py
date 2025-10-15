@@ -14,6 +14,7 @@ import boto3
 from botocore.config import Config
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 from strands import Agent, tool
+from strands.telemetry import StrandsTelemetry
 from strands.models import BedrockModel
 from strands.tools.mcp import MCPClient
 from mcp.client.streamable_http import streamablehttp_client
@@ -56,8 +57,8 @@ logging.getLogger("strands").setLevel(logging.INFO)
 
 os.environ['BYPASS_TOOL_CONSENT'] = 'True'
 
-# strands_telemetry = StrandsTelemetry()
-# strands_telemetry.setup_otlp_exporter()     # Send traces to OTLP endpoint
+strands_telemetry = StrandsTelemetry()
+strands_telemetry.setup_otlp_exporter()     # Send traces to OTLP endpoint
 
 retry_config = Config(
     retries={
