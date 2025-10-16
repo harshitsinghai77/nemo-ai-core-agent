@@ -1,38 +1,16 @@
-from dotenv import load_dotenv
-load_dotenv()
-import os
-otel_vars = [
-    "OTEL_PYTHON_DISTRO",
-    "OTEL_PYTHON_CONFIGURATOR",
-    "OTEL_EXPORTER_OTLP_PROTOCOL",
-    "OTEL_EXPORTER_OTLP_LOGS_HEADERS",
-    "OTEL_RESOURCE_ATTRIBUTES",
-    "AGENT_OBSERVABILITY_ENABLED",
-    "OTEL_TRACES_EXPORTER"
-]
-
-print("OpenTelemetry Configuration:")
-for var in otel_vars:
-    value = os.getenv(var)
-    if value:
-        print(f"{var}={value}")
-
-from utils import set_otel_exporter_otlp_log_headers
-
-import os
 import json
 import asyncio
 
-from strands import Agent, tool
-from strands.models import BedrockModel
-import boto3
+from dotenv import load_dotenv
 
-# from run_workflow import run_nemo_agent_workflow
+from run_workflow import run_nemo_agent_workflow
+
+load_dotenv()
 
 def lambda_handler(event, context):
 
-    if context.log_group_name and context.log_stream_name:
-        set_otel_exporter_otlp_log_headers(log_group_name=context.log_group_name, log_stream_name=context.log_stream_name)
+    # if context.log_group_name and context.log_stream_name:
+    #     set_otel_exporter_otlp_log_headers(log_group_name=context.log_group_name, log_stream_name=context.log_stream_name)
 
     # Get the JIRA story description from the event body
     if "Records" not in event:
@@ -52,37 +30,13 @@ def lambda_handler(event, context):
                 print(f"⚠️ Skipping message: missing fields: {missing} {str(record)}")
                 continue  # Skip this message but continue processing others
             
-            # output = asyncio.run(run_nemo_agent_workflow(
-            #     github_link=payload["github_link"],
-            #     jira_story=payload["jira_story"],
-            #     jira_story_id=payload["jira_story_id"],
-            #     is_data_analysis_task=payload['is_data_analysis_task']
-            # ))
-
-            session = boto3.Session()
-            bedrock_nova_pro_model = BedrockModel(
-                model_id='us.amazon.nova-pro-v1:0',
-                boto_session=session,
-            )
-
-            travel_agent = Agent(
-                model=bedrock_nova_pro_model,
-                system_prompt="""You are an experienced travel agent specializing in personalized travel recommendations 
-                with access to real-time web information. You should provide comprehensive recommendations with current 
-                information, brief descriptions, and practical travel details.""",
-            )
-
-            # Execute the travel research task
-            query = """Research and recommend suitable travel destinations for someone looking for cowboy vibes, 
-            rodeos, and museums in New York city. Use web search to find current information about venues, 
-            events, and attractions."""
-
-            result = travel_agent(query)
-            print("Result:", result)
-
-            print(f"✅ Lambda workflow complete: {result}")
-            # print(f"✅ Lambda workflow complete: {output}")
-
+            output = asyncio.run(run_nemo_agent_workflow(
+                github_link=payload["github_link"],
+                jira_story=payload["jira_story"],
+                jira_story_id=payload["jira_story_id"],
+                is_data_analysis_task=payload['is_data_analysis_task']
+            ))
+            print(f"✅ Lambda workflow complete: {output}")
             return {"statusCode": 200, "body": "Workflow complete."}
 
         except Exception as e:

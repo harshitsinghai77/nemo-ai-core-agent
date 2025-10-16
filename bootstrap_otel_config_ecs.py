@@ -4,7 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def set_otel_exporter_otlp_log_headers_for_ecs(metric_namespace: str = 'nemo-ai-core-agent-ecs'):
+def set_otel_exporter_otlp_log_headers(metric_namespace: str = 'nemo-ai-core-agent-ecs'):
     """Set OTEL_EXPORTER_OTLP_LOGS_HEADERS environment variable for ECS Fargate."""
 
     metadata_uri = os.getenv("ECS_CONTAINER_METADATA_URI_V4")
@@ -16,9 +16,9 @@ def set_otel_exporter_otlp_log_headers_for_ecs(metric_namespace: str = 'nemo-ai-
     data = resp.json()
     log_group = data['Containers'][0]['LogOptions']['awslogs-group']
     log_stream = data['Containers'][0]['LogOptions']['awslogs-stream']
-    # os.environ["OTEL_EXPORTER_OTLP_LOGS_HEADERS"] = f"x-aws-log-group={log_group},x-aws-log-stream={log_stream},x-aws-metric-namespace={metric_namespace}"
-    # logger.info(f"OTEL_EXPORTER_OTLP_LOGS_HEADERS set to: {os.getenv('OTEL_EXPORTER_OTLP_LOGS_HEADERS')}")
-    return f"x-aws-log-group={log_group},x-aws-log-stream={log_stream},x-aws-metric-namespace={metric_namespace}"
+    otel_exporter_otlp_logs_header = f"x-aws-log-group={log_group},x-aws-log-stream={log_stream},x-aws-metric-namespace={metric_namespace}"
+    os.environ["OTEL_EXPORTER_OTLP_LOGS_HEADERS"] = otel_exporter_otlp_logs_header
+    return otel_exporter_otlp_logs_header
 
 if __name__ == "__main__":
-    print(set_otel_exporter_otlp_log_headers_for_ecs())
+    print(set_otel_exporter_otlp_log_headers())
