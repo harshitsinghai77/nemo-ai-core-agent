@@ -73,7 +73,7 @@ def set_otel_exporter_otlp_log_headers_for_ecs(metric_namespace: str = 'nemo-ai-
     resp = requests.get(f'{metadata_uri}/task')
     resp.raise_for_status()
     data = resp.json()
-    print("==>> resp: ", resp)
+    print("==>> data: ", data)
     logger.info(f"==>> data: {str(data)}")
     task_arn = data['TaskARN']
     task_id = task_arn.split('/')[-1]

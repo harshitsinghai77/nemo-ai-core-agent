@@ -40,7 +40,7 @@ def start_ecs_task():
     github_link = os.getenv("GITHUB_LINK")
     jira_story = os.getenv("JIRA_STORY")
     jira_story_id = os.getenv("JIRA_STORY_ID")
-    is_data_analysis_task = os.getenv("IS_DATA_ANALYSIS_TASK") == "True"
+    is_data_analysis_task = os.getenv("IS_DATA_ANALYSIS_TASK")
 
     if not all([github_link, jira_story, jira_story_id, is_data_analysis_task]):
         logger.error("Missing required environment variables.")
@@ -51,6 +51,7 @@ def start_ecs_task():
         exit(1)
     
     try:
+        is_data_analysis_task = str(is_data_analysis_task).lower() == "true"
         # output = asyncio.run(run_nemo_agent_workflow(github_link=github_link, jira_story=jira_story, jira_story_id=jira_story_id, is_data_analysis_task=is_data_analysis_task))
         session = boto3.Session()
         bedrock_nova_pro_model = BedrockModel(
