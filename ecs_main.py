@@ -8,6 +8,7 @@ load_dotenv()
 
 from dotenv import load_dotenv
 load_dotenv()
+from utils import set_otel_exporter_otlp_log_headers_for_ecs
 import os
 otel_vars = [
     "OTEL_PYTHON_DISTRO",
@@ -18,7 +19,7 @@ otel_vars = [
     "AGENT_OBSERVABILITY_ENABLED",
     "OTEL_TRACES_EXPORTER"
 ]
-os.environ["OTEL_EXPORTER_OTLP_LOGS_HEADERS"] = "x-aws-log-group=/ecs/nemo-ai-container,x-aws-metric-namespace=nemo-ai-ecs"
+set_otel_exporter_otlp_log_headers_for_ecs()
 
 print("OpenTelemetry Configuration:")
 for var in otel_vars:
@@ -43,6 +44,10 @@ def start_ecs_task():
 
     if not all([github_link, jira_story, jira_story_id, is_data_analysis_task]):
         logger.error("Missing required environment variables.")
+        logger.info(f"GITHUB_LINK: {github_link}")
+        logger.info(f"JIRA_STORY: {jira_story}")
+        logger.info(f"JIRA_STORY_ID: {jira_story_id}")
+        logger.info(f"IS_DATA_ANALYSIS_TASK: {is_data_analysis_task}")
         exit(1)
     
     try:

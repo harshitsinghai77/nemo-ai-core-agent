@@ -2,7 +2,11 @@ import os
 import json
 from urllib.parse import urlparse
 
+import requests
 import boto3
+import logging
+
+logger = logging.getLogger(__name__)
 
 secrets_manager_client = boto3.client('secretsmanager', region_name='us-east-1')
 
@@ -50,7 +54,7 @@ def get_github_personal_access_token(secret_arn: str) -> str:
         print(f"[ERROR] Could not retrieve GitHub PAT: {e}")
         raise
 
-def set_otel_exporter_otlp_log_headers(log_group_name: str, log_stream_name: str, metric_namespace: str = 'nemo-ai-core-agent'):
+def set_otel_exporter_otlp_log_headers(log_group_name: str, log_stream_name: str, metric_namespace: str = 'nemo-ai-core-agent-lambda'):
     """Set OTEL_EXPORTER_OTLP_LOGS_HEADERS environment variable."""
     otel_log_headers = (
         f"x-aws-log-group={log_group_name},"
@@ -58,3 +62,29 @@ def set_otel_exporter_otlp_log_headers(log_group_name: str, log_stream_name: str
         f"x-aws-metric-namespace={metric_namespace}"
     )
     os.environ["OTEL_EXPORTER_OTLP_LOGS_HEADERS"] = otel_log_headers
+
+def set_otel_exporter_otlp_log_headers_for_ecs(metric_namespace: str = 'nemo-ai-core-agent-ecs'):
+    """Set OTEL_EXPORTER_OTLP_LOGS_HEADERS environment variable for ECS Fargate."""
+
+    metadata_uri = os.getenv("ECS_CONTAINER_METADATA_URI_V4")
+    if not metadata_uri:
+        raise ValueError("ECS_CONTAINER_METADATA_URI_V4 environment variable not set.")
+    
+    resp = requests.get(f'{metadata_uri}/task')
+    resp.raise_for_status()
+    data = resp.json()
+    print("==>> resp: ", resp)
+    logger.info(f"==>> data: {str(data)}")
+    task_arn = data['TaskARN']
+    task_id = task_arn.split('/')[-1]
+
+    container = data['Containers'][0]
+    container_name = container['Name']
+    log_options = container['LogOptions']
+    log_group = log_options.get('awslogs-group', '/ecs/nemo-ai-container')
+    # stream_prefix = log_options['awslogs-stream-prefix']
+    log_stream_name = f"nemo-ai-ecs/{container_name}/{task_id}"
+    logger.info(f"Log Stream Name: {log_stream_name}")
+    logger.info(f"Log Group Name: {log_group}")
+    
+    os.environ["OTEL_EXPORTER_OTLP_LOGS_HEADERS"] = f"x-aws-log-group={log_group},x-aws-log-stream={log_stream_name},x-aws-metric-namespace={metric_namespace}"
