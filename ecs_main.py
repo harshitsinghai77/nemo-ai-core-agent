@@ -1,10 +1,7 @@
 import os
 import logging
-from dotenv import load_dotenv
 import traceback
 import asyncio
-
-load_dotenv()
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -85,4 +82,26 @@ def start_ecs_task():
         exit(1)
 
 if __name__ == "__main__":
+
+    from dotenv import load_dotenv
+    load_dotenv()
+    from utils import set_otel_exporter_otlp_log_headers_for_ecs
+    set_otel_exporter_otlp_log_headers_for_ecs()
+    import os
+    otel_vars = [
+        "OTEL_PYTHON_DISTRO",
+        "OTEL_PYTHON_CONFIGURATOR",
+        "OTEL_EXPORTER_OTLP_PROTOCOL",
+        "OTEL_EXPORTER_OTLP_LOGS_HEADERS",
+        "OTEL_RESOURCE_ATTRIBUTES",
+        "AGENT_OBSERVABILITY_ENABLED",
+        "OTEL_TRACES_EXPORTER"
+    ]
+
+    print("OpenTelemetry Configuration:")
+    for var in otel_vars:
+        value = os.getenv(var)
+        if value:
+            print(f"{var}={value}")
+
     start_ecs_task()
