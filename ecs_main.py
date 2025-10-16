@@ -3,32 +3,14 @@ import logging
 import traceback
 import asyncio
 
+import boto3
 from dotenv import load_dotenv
-load_dotenv()
-from utils import set_otel_exporter_otlp_log_headers_for_ecs
-import os
-otel_vars = [
-    "OTEL_PYTHON_DISTRO",
-    "OTEL_PYTHON_CONFIGURATOR",
-    "OTEL_EXPORTER_OTLP_PROTOCOL",
-    "OTEL_EXPORTER_OTLP_LOGS_HEADERS",
-    "OTEL_RESOURCE_ATTRIBUTES",
-    "AGENT_OBSERVABILITY_ENABLED",
-    "OTEL_TRACES_EXPORTER"
-]
-set_otel_exporter_otlp_log_headers_for_ecs()
-
-print("OpenTelemetry Configuration:")
-for var in otel_vars:
-    value = os.getenv(var)
-    if value:
-        print(f"{var}={value}")
-
-# from run_workflow import run_nemo_agent_workflow
 from strands import Agent, tool
 from strands.models import BedrockModel
-import boto3
 
+# from run_workflow import run_nemo_agent_workflow
+
+load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -47,6 +29,22 @@ def start_ecs_task():
         logger.info(f"IS_DATA_ANALYSIS_TASK: {is_data_analysis_task}")
         exit(1)
     
+    otel_vars = [
+        "OTEL_PYTHON_DISTRO",
+        "OTEL_PYTHON_CONFIGURATOR",
+        "OTEL_EXPORTER_OTLP_PROTOCOL",
+        "OTEL_EXPORTER_OTLP_LOGS_HEADERS",
+        "OTEL_RESOURCE_ATTRIBUTES",
+        "AGENT_OBSERVABILITY_ENABLED",
+        "OTEL_TRACES_EXPORTER"
+    ]
+
+    print("OpenTelemetry Configuration:")
+    for var in otel_vars:
+        value = os.getenv(var)
+        if value:
+            print(f"{var}={value}")
+
     try:
         is_data_analysis_task = str(is_data_analysis_task).lower() == "true"
         # output = asyncio.run(run_nemo_agent_workflow(github_link=github_link, jira_story=jira_story, jira_story_id=jira_story_id, is_data_analysis_task=is_data_analysis_task))
@@ -82,26 +80,4 @@ def start_ecs_task():
         exit(1)
 
 if __name__ == "__main__":
-
-    from dotenv import load_dotenv
-    load_dotenv()
-    from utils import set_otel_exporter_otlp_log_headers_for_ecs
-    set_otel_exporter_otlp_log_headers_for_ecs()
-    import os
-    otel_vars = [
-        "OTEL_PYTHON_DISTRO",
-        "OTEL_PYTHON_CONFIGURATOR",
-        "OTEL_EXPORTER_OTLP_PROTOCOL",
-        "OTEL_EXPORTER_OTLP_LOGS_HEADERS",
-        "OTEL_RESOURCE_ATTRIBUTES",
-        "AGENT_OBSERVABILITY_ENABLED",
-        "OTEL_TRACES_EXPORTER"
-    ]
-
-    print("OpenTelemetry Configuration:")
-    for var in otel_vars:
-        value = os.getenv(var)
-        if value:
-            print(f"{var}={value}")
-
     start_ecs_task()

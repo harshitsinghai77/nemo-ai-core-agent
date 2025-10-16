@@ -8,4 +8,7 @@ COPY . .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["opentelemetry-instrument", "python", "ecs_main.py"]
+# CMD ["opentelemetry-instrument", "python", "ecs_main.py"]
+RUN chmod +x ecs_bootstrap.sh
+
+CMD ["./ecs_bootstrap.sh"]

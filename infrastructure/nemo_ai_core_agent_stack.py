@@ -76,7 +76,7 @@ class NemoCoreAgentStack(Stack):
                     "bedrock-agentcore:GetCodeInterpreter",
 
                     "xray:PutTraceSegments",
-                    "xray:PutTelemetryRecords"
+                    "xray:PutTelemetryRecords",
                 ],
                 resources=["*"],
             )
