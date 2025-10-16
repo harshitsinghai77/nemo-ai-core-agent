@@ -51,7 +51,7 @@ jobs:
           docker tag nemo-ai-agent:latest $IMAGE_URI
           docker push $IMAGE_URI
 
-      # - name: Deploy CDK stack
-      #   env:
-      #     AWS_DEFAULT_ACCOUNT: ${{ secrets.AWS_DEFAULT_ACCOUNT }}
-      #   run: cdk deploy
+      - name: Deploy CDK stack
+        env:
+          AWS_DEFAULT_ACCOUNT: ${{ secrets.AWS_DEFAULT_ACCOUNT }}
+        run: cdk deploy
