@@ -214,6 +214,36 @@ aws configure
 cdk deploy
 ```
 
+### Docker Deployment Options
+
+The project includes three Docker configurations for different environments:
+
+#### Local Development
+```bash
+# Build and run local development container
+docker build -f Dockerfile_local -t nemo-ai-local .
+docker run -it --rm -v $(pwd):/app -v ~/.aws:/root/.aws nemo-ai-local bash
+```
+
+#### AWS Lambda Container
+```bash
+# Build Lambda container image
+docker build -f Dockerfile -t nemo-ai-lambda .
+# Deploy to ECR and update Lambda function
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <account>.dkr.ecr.us-east-1.amazonaws.com
+docker tag nemo-ai-lambda:latest <account>.dkr.ecr.us-east-1.amazonaws.com/nemo-ai-lambda:latest
+docker push <account>.dkr.ecr.us-east-1.amazonaws.com/nemo-ai-lambda:latest
+```
+
+#### ECS Fargate Container
+```bash
+# Build ECS container with OpenTelemetry support
+docker build -f Dockerfile_ECS -t nemo-ai-ecs .
+# Deploy to ECR and update ECS service
+docker tag nemo-ai-ecs:latest <account>.dkr.ecr.us-east-1.amazonaws.com/nemo-ai-ecs:latest
+docker push <account>.dkr.ecr.us-east-1.amazonaws.com/nemo-ai-ecs:latest
+```
+
 ### Usage
 
 #### Lambda Deployment (< 15 minutes)
