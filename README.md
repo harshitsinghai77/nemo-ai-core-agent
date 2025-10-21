@@ -116,7 +116,7 @@ src/
   - Cross-region failover with retry configuration
   - Model access through IAM roles and resource-based policies
 
-- **Bedrock AgentCore**: Secure execution environment
+- **AgentCore Code Interpreter**: Secure execution environment
   - **Code Interpreter** - Isolated Python sandbox for data analysis
   - **Memory Service** - Persistent context across agent interactions
   - **Observability** - Built-in tracing and monitoring
@@ -131,12 +131,8 @@ src/
   - VPC configuration for secure resource access
 
 - **Amazon ECS Fargate**: Container orchestration for long-running tasks
-  - Serverless container execution without EC2 management
   - Custom task definitions with resource allocation
-  - Integration with Application Load Balancer
-  - Auto-scaling based on CPU/memory utilization
-  - CloudWatch Container Insights for monitoring
-
+  
 #### Data & Messaging
 - **Amazon SQS**: Asynchronous message processing
   - Standard queues for Jira webhook ingestion
@@ -157,24 +153,13 @@ src/
   - Security groups with least-privilege access
   - VPC endpoints for AWS service communication
 
-- **IAM Roles & Policies**: Fine-grained access control
-  - Lambda execution roles with minimal permissions
-  - ECS task roles for service-specific access
-  - Cross-account access for multi-environment deployments
-
 ### AI & ML Framework
 - **Strands Agents SDK**: Multi-agent workflow orchestration with async execution and tool integration
 - **Model Context Protocol (MCP)**: 
   - **Context7 MCP** - Real-time library documentation and code examples
   - **AWS Knowledge MCP** - AWS service documentation and best practices
-- **OpenTelemetry**: Distributed tracing and observability with OTLP export
+- **AgentCore Observability**: Distributed tracing and observability with OTLP export
 
-### Advanced Features
-
-#### Intelligent Code Analysis
-- **AST-based Code Understanding** - Abstract Syntax Tree analysis for precise code modification
-- **Vector Store Integration** - FAISS and Qdrant support for semantic code search
-- **Change Manifest System** - Git-based tracking of all code modifications
 
 #### MCP Server Integration
 ```python
