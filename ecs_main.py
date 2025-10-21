@@ -5,7 +5,7 @@ import asyncio
 
 from dotenv import load_dotenv
 
-from run_workflow import run_nemo_agent_workflow
+from src.core.run_workflow import run_nemo_agent_workflow
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)

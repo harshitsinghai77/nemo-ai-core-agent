@@ -3,14 +3,11 @@ import asyncio
 
 from dotenv import load_dotenv
 
-from run_workflow import run_nemo_agent_workflow
+from src.core.run_workflow import run_nemo_agent_workflow
 
 load_dotenv()
 
 def lambda_handler(event, context):
-
-    # if context.log_group_name and context.log_stream_name:
-    #     set_otel_exporter_otlp_log_headers(log_group_name=context.log_group_name, log_stream_name=context.log_stream_name)
 
     # Get the JIRA story description from the event body
     if "Records" not in event:
@@ -28,7 +25,7 @@ def lambda_handler(event, context):
             if not all(field in payload for field in required_fields):
                 missing = [field for field in required_fields if field not in payload]
                 print(f"⚠️ Skipping message: missing fields: {missing} {str(record)}")
-                continue  # Skip this message but continue processing others
+                continue 
             
             output = asyncio.run(run_nemo_agent_workflow(
                 github_link=payload["github_link"],

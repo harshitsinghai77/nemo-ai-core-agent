@@ -20,7 +20,7 @@ from mcp.client.streamable_http import streamablehttp_client
 
 # from ast_reader import MemoryCodeIndex
 from custom_tools import editor, file_read, file_write, shell
-from change_manifest import get_manifest, format_manifest_code_diffs
+from src.utils.change_manifest import get_manifest, format_manifest_code_diffs
 from prompt.agent_prompt import (
     planner_prompt,
     senior_engineer_prompt,
