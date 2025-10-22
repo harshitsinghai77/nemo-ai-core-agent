@@ -1,6 +1,6 @@
 ## Nemo AI Core Agent - AWS AI Agent Global Hackathon
 
-#### Cut Your Feature Delivery Time in Half. Nemo AI converts your Jira Stories into ready-to-review Pull Requests.
+#### Cut Your Feature Delivery Time in Half. Nemo AI converts your Jira Stories into ready-to-review GitHub Pull Requests using AWS Bedrock and AgentCore..
 
 **An intelligent multi-agent system that autonomously converts Jira stories into ready-to-review Github Pull Request using AWS Bedrock and AgentCore.**
 
@@ -13,26 +13,18 @@
 
 Nemo AI is an autonomous AI agent that turns Jira stories into first draft of Pull Request — automatically. It understands your jira story, analyzes your existing codebase, and creates a GitHub Pull Request with a first draft of the solution. It works with your existing tools like Jira, Confluence, GitHub, and AWS, so it fits naturally into your development workflow.
 
-### Hackathon Requirements
-
-**LLM**: AWS Bedrock (Claude Sonnet 4, Nova Pro)  
-**AgentCore**: Code Interpreter for secure code execution  
-**Autonomous Capabilities**: Multi-agent workflow with reasoning  
-**External Integrations**: MCP Servers (Context7 MCP and AWS Knowledge MCP Server), GitHub, Confluence, Jira  
-**Best Strands SDK Implementation**: Advanced multi-agent patterns  
-
 ## Architecture
 
 ### Core Engine (This Repository)
-The core engine that manages the complete workflow from ingesting Jira story to Github Pull request. Built using a sophisticated multi-agent architecture with AWS Bedrock and AgentCore integration.
+Core Engine — Orchestrates the complete Nemo AI workflow for both code development ("First Draft") and data analysis ("Unpaid Intern"). Built a modular, multi-agent system using AWS Bedrock and AgentCore.
 
 ### System Internals
 
 #### Multi-Agent Workflow Architecture
-The system employs a **7-agent pipeline** that processes Jira stories through distinct phases:
+The system employs a **8-agent pipeline** that processes Jira stories through distinct phases:
 
-1. **Planner Agent** (`planner_prompt`) - Analyzes Jira stories and creates implementation plans
-2. **Senior Engineer Agent** - The only agent that writes code, implements changes
+1. **Planner Agent** - Analyzes Jira stories and creates implementation plans
+2. **Senior Engineer Agent** - Responsible for implementing the proposed solution. The only agent that modifies code.
 3. **Code Reviewer Agent** - Comprehensive code review covering security, quality, and design
 4. **Coding Standards Agent** - Python best practices and PEP compliance
 5. **System Design Agent** - Architecture and design patterns review
@@ -41,15 +33,15 @@ The system employs a **7-agent pipeline** that processes Jira stories through di
 8. **Documentation Agent** - Generates a Pull Request (PR) comment writeup based on the changes.
  
 #### Dual Workflow Support
-- **Code Development Workflow** (`workflow.py`) - for The First Draft - Nemo AI serves as an autonomous software developer that turns Jira stories into ready-to-review pull requests. When a story moves to `In Progress`
-- **Unpaid Intern** (`data_analyst_workflow.py`) - Nemo AI's data analyst intern that delivers fast, accurate business insights without requiring SQL or Python skills.
+- **Code Development Workflow** (`workflow.py`) - The First Draft - Nemo AI serves as an autonomous software developer that turns Jira stories into ready-to-review pull requests. When a story moves to `In Progress`
+- **Data Analyst** (`data_analyst_workflow.py`) - Nemo AI's Unpaid intern that delivers fast, accurate business insights without requiring SQL or Python skills.
 
 #### AWS Bedrock Integration
 - **Claude Sonnet 4** - Primary model for complex reasoning and code generation
 - **AWS Nova Pro** - Secondary model for specialized review tasks
 - **AgentCore Code Interpreter** - Secure Python execution environment for data analysis 
 
-### Supporting Microservices Platform
+### Nemo AI – Supporting Infrastructure Repositories
 
 | Service | Repository | Purpose |
 |---------|------------|---------|
@@ -100,10 +92,10 @@ src/
 - **DataAnalystAgent** - Strands agent with Python execution tools
 
 #### Multi-Agent Pipeline (`workflow.py`)
-- **Agent Initialization** - Sets up 7 specialized agents with different models
+- **Agent Initialization** - Sets up 8 specialized agents with different models
 - **MCP Integration** - Context7 and AWS Documentation MCP servers
 - **Change Tracking** - Git-based manifest system for code changes
-- **Review Orchestration** - Parallel execution of review agents
+- **Review Orchestration** - Async Parallel execution of review agents
 
 ## Technology Stack
 
@@ -114,13 +106,11 @@ src/
   - `us.anthropic.claude-sonnet-4-20250514-v1:0` - Primary reasoning and code generation
   - `us.amazon.nova-pro-v1:0` - Specialized review tasks and analysis
   - Cross-region failover with retry configuration
-  - Model access through IAM roles and resource-based policies
 
 - **AgentCore Code Interpreter**: Secure execution environment
-  - **Code Interpreter** - Isolated Python sandbox for data analysis
+  - **Code Interpreter** - Isolated Python sandbox for executing Python code
   - **Memory Service** - Persistent context across agent interactions
   - **Observability** - Built-in tracing and monitoring
-  - **Identity Management** - Secure authentication and access control
 
 #### Compute & Orchestration
 - **AWS Lambda**: Event-driven serverless execution
@@ -128,8 +118,7 @@ src/
   - SQS trigger integration for Jira webhook processing
   - 15-minute timeout limit for standard workflows
   - Auto-scaling based on SQS queue depth
-  - VPC configuration for secure resource access
-
+ 
 - **Amazon ECS Fargate**: Container orchestration for long-running tasks
   - Custom task definitions with resource allocation
   
@@ -144,15 +133,7 @@ src/
   - Jira story tracking and status management
   - On-demand billing with auto-scaling
   - Global secondary indexes for query optimization
-  - Point-in-time recovery and backup
-
-#### Networking & Security
-- **VPC Configuration**: Secure network isolation
-  - Private subnets for Lambda and ECS tasks
-  - NAT Gateway for outbound internet access
-  - Security groups with least-privilege access
-  - VPC endpoints for AWS service communication
-
+ 
 ### AI & ML Framework
 - **Strands Agents SDK**: Multi-agent workflow orchestration with async execution and tool integration
 - **Model Context Protocol (MCP)**: 
@@ -209,10 +190,22 @@ pip install -r requirements.txt
 aws configure
 ```
 
-4. **Deploy infrastructure**
+### Deploy Infrastructure with AWS CDK
+
+Deploy the AWS infrastructure including the Lambda function with Docker image support and SQS integration using AWS CDK:
+
 ```bash
+# Install CDK CLI if not already installed
+npm install -g aws-cdk
+
+# Install Python dependencies
+pip install -r requirements-dev.txt
+
+# Bootstrap your AWS environment (run once per account/region)
+cdk bootstrap aws://<ACCOUNT_ID>/us-east-1
+
+# Deploy the CDK stack
 cdk deploy
-```
 
 ### Docker Deployment Options
 
@@ -227,12 +220,7 @@ docker run -it --rm -v $(pwd):/app -v ~/.aws:/root/.aws nemo-ai-local bash
 
 #### AWS Lambda Container
 ```bash
-# Build Lambda container image
-docker build -f Dockerfile -t nemo-ai-lambda .
-# Deploy to ECR and update Lambda function
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <account>.dkr.ecr.us-east-1.amazonaws.com
-docker tag nemo-ai-lambda:latest <account>.dkr.ecr.us-east-1.amazonaws.com/nemo-ai-lambda:latest
-docker push <account>.dkr.ecr.us-east-1.amazonaws.com/nemo-ai-lambda:latest
+cdk deploy
 ```
 
 #### ECS Fargate Container
@@ -269,7 +257,7 @@ export IS_DATA_ANALYSIS_TASK="true"
 python ecs_main.py
 ```
 
-### Workflow Execution Flow
+### End-to-End Workflow Process
 
 #### Code Development Pipeline
 1. **Repository Cloning** - GitHub repository is cloned to `/tmp/{project_name}`
@@ -298,16 +286,6 @@ change_manifest = get_manifest(project_name=project_name, py_only=True)
 # Returns: {"changes": [{"file_path": "...", "change_type": "...", "content": "..."}]}
 ```
 
-#### Agent Tool Integration
-```python
-@tool
-def execute_python(code: str, description: str = "") -> str:
-    """Execute Python code in AgentCore Code Interpreter sandbox"""
-    response = code_interpreter_session.client.invoke("executeCode", {
-        "code": code, "language": "python", "clearContext": False
-    })
-```
-
 #### MCP Documentation Lookup
 ```python
 # Automatic library documentation retrieval
@@ -316,7 +294,7 @@ def execute_python(code: str, description: str = "") -> str:
 # 3. AWS Documentation search for best practices
 ```
 
-## Development & Debugging
+## Local Development & Debugging
 
 ### Local Development
 ```bash
@@ -358,6 +336,14 @@ new_review_agent = Agent(
 # Add to review_agents dictionary
 review_agents['new_reviewer'] = new_review_agent
 ```
+
+### Hackathon Requirements
+
+**LLM**: AWS Bedrock (Claude Sonnet 4, Nova Pro)  
+**AgentCore**: Code Interpreter for secure code execution  
+**Autonomous Capabilities**: Multi-agent workflow with reasoning  
+**External Integrations**: MCP Servers (Context7 MCP and AWS Knowledge MCP Server), GitHub, Confluence, Jira  
+**Strands SDK Implementation**: Multi-agent workflow pattern using Strands SDK. 
 
 ## Contributing
 
