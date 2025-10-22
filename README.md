@@ -41,15 +41,19 @@ The system employs a **8-agent pipeline** that processes Jira stories through di
 - **AWS Nova Pro** - Secondary model for specialized review tasks
 - **AgentCore Code Interpreter** - Secure Python execution environment for data analysis 
 
-### Nemo AI – Supporting Infrastructure Repositories
+### Nemo AI – Infrastructure Setup Order
 
-| Service | Repository | Purpose |
-|---------|------------|---------|
-| **DynamoDB Storage** | [nemo-ai-dynamodb](https://github.com/harshitsinghai77/nemo-ai-dynamodb) | Database for Jira story data ingested via Lambda. |
-| **Observability** | [nemo-ai-observability-infra](https://github.com/harshitsinghai77/nemo-ai-observability-infra) | CloudWatch integration for Bedrock AgentCore Observability |
-| **Message Queue** | [nemo-ai-sqs](https://github.com/harshitsinghai77/nemo-ai-sqs) | Enables decoupled communication between Jira Ingestion Lambda and Core Engine Lambda using a producer-consumer architecture. |
-| **Jira Integration** | [nemo-ai-jira-ingestion-api](https://github.com/harshitsinghai77/nemo-ai-jira-ingestion-api) | Exposes an API endpoint to receive Jira webhooks, processes story data, and publishes messages to SQS for downstream consumption. |
-| **ECS Task Definitions** | [nemo-ai-ecs-fargate-core](https://github.com/harshitsinghai77/nemo-ai-ecs-fargate-core) | Contains ECS Fargate task definitions used to deploy and manage containerized services. No service logic included. |
+Deploy the infrastructure repositories in the following order for end-to-end setup:
+
+| Order | Service | Repository | Purpose |
+|-------|---------|------------|---------|
+| **1** | **AWS Bootstrap** | [nemo-ai-aws-infra-bootstrap](https://github.com/harshitsinghai77/nemo-ai-aws-infra-bootstrap) | Bootstraps AWS environment using CDK bootstrap command. Essential first step for CDK deployments. |
+| **2** | **DynamoDB Storage** | [nemo-ai-dynamodb](https://github.com/harshitsinghai77/nemo-ai-dynamodb) | Database for Jira story ingested via Lambda. |
+| **3** | **Jira Ingestion API Lambda** | [nemo-ai-jira-ingestion-api](https://github.com/harshitsinghai77/nemo-ai-jira-ingestion-api) | Exposes an API endpoint to receive Jira webhooks, processes story data, and routes tasks: publishes standard tasks to SQS or directly invokes ECS Fargate tasks for long-running operations based on Jira story description. |
+| **4** | **Message Queue** | [nemo-ai-sqs](https://github.com/harshitsinghai77/nemo-ai-sqs) | Enables decoupled communication between Jira Ingestion Lambda and Core Engine Lambda using a producer-consumer architecture. |
+| **5** | **Core Engine** | [**This Repository**](https://github.com/harshitsinghai77/nemo-ai-core-agent) | Supports dual execution modes: creates Lambda Docker image for SQS-triggered standard workflows (<15 min) and pushes ECS Docker image to ECR for direct Fargate task invocation on complex/long-running operations. Routing decision made by Jira Ingestion Lambda based on Jira story description. |
+| **6** | **ECS Task Definitions** | [nemo-ai-ecs-fargate-core](https://github.com/harshitsinghai77/nemo-ai-ecs-fargate-core) | Contains ECS Fargate task definitions that use the Docker image pushed to ECR from the Core Engine repository. |
+| **7** | **Observability** | [nemo-ai-observability-infra](https://github.com/harshitsinghai77/nemo-ai-observability-infra) | CloudWatch integration for Bedrock AgentCore Observability. Deploy last to monitor the complete system. |
 
 ## Repository Structure & Navigation
 
